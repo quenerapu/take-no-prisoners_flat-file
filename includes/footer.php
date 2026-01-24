@@ -1,6 +1,7 @@
 <footer>
       <div class="footer-inner">
           <p>&copy; <?= date('Y') ?> <?= htmlspecialchars($config['name'] ?? 'Wiki') ?></p>
+          <p><a href="./es">ES</a> | <a href="./en">EN</a></p>
       </div>
   </footer>
 
