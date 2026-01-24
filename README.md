@@ -63,13 +63,17 @@ Para que **Take No Prisoners Flat-File** funcione correctamente, asegúrate de m
 
 ## 🧩 Creación y actualización del archivo content/search_index.json
 
-Ejecuta el script con `tudominio.com` /core/indexer.php?token=TU_TOKEN_SECRETO
+Ejecuta el script con `tudominio.com` `/core/indexer.php?token=TU_TOKEN_SECRETO`
 
 Para tener tu propio token, edita el archivo core/indexer.php y en la línea:
 ```php
 $secretToken = 'TU_TOKEN_SECRETO';
 ```
 pon la palabra clave que quieras en lugar de `TU_TOKEN_SECRETO`.
+
+## 🔐 Tema permisos + Docker
+
+Si estás ejecutando localmente **Take No Prisoners Flat-File** en Docker es posible que tengas problemas de permisos para ejecutar el script `localhost:8080/core/indexer.php?token=TU_TOKEN_SECRETO`. Como solución simple, dale permiso a todo el mundo para escribir en la carpeta `content` y listo (`chmod -R 777 content/`).
 
 ## 🛡️ Seguridad
 
