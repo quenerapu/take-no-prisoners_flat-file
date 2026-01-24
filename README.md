@@ -1,6 +1,6 @@
 # 🍃 Take No Prisoners Flat-File v1.0
 
-**Take No Prisoners Flat-File** es un sistema de gestión de contenidos (CMS) moderno y minimalista, **concebido para operar íntegramente sin bases de datos**. Al utilizar el sistema de archivos como motor principal, ofrece una velocidad de respuesta excepcional y una portabilidad total: basta con copiar la carpeta en cualquier servidor PHP para que el sitio cobre vida.
+**Take No Prisoners Flat-File** es un sistema de gestión de contenidos (CMS) moderno y minimalista, **concebido para operar íntegramente sin bases de datos**. Al utilizar el sistema de archivos como motor principal, ofrece una velocidad de respuesta excepcional y una portabilidad total: basta con copiar la carpeta en cualquier servidor PHP para que el sitio cobre vida. Intencionadamente **Take No Prisoners Flat-File** carece de panel de administración, por lo que se espera que el usuario suba los archivos a través de git, sftp o el sistema que sea.
 
 ## ✨ Funcionalidades clave
 
