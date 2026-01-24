@@ -49,9 +49,9 @@ docker-compose.yml
 version: '3.8'
 
 services:
-  grijander:
+  take-no-prisoners_flat-file:
     build: .
-    container_name: grijander_cms
+    container_name: take-no-prisoners_flat-file_cms
     ports:
       - "8080:80"
     volumes:
