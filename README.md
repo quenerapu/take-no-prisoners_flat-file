@@ -83,7 +83,7 @@ pon la palabra clave que quieras en lugar de `TU_TOKEN_SECRETO`.
 - Take No Prisoners Database-Only With Admin Panel v1.0
 - Take No Prisoners Database-Only With Admin Panel Multitenant v1.0
 
-## Agradecimientos
+## 🤟 Agradecimientos
 
 - [Coded with Megadeth as background music].
 
