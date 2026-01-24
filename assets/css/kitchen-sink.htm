@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Sink - Guía de Estilos</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos solo para esta guía (para mostrar colores) */
+        .color-swatch { width: 100%; height: 60px; border-radius: 6px; margin-bottom: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .grid-demo { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-inner">
+            <a href="#" class="site-title">Kitchen Sink</a>
+            <nav>
+                <a href="#typography">Texto</a>
+                <a href="#elements">Elementos</a>
+                <a href="#forms">Formularios</a>
+                <a href="#custom">Custom</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        
+        <header style="border:none; background:transparent; padding:0; margin-bottom: 3rem;">
+            <h1 style="margin-top:0;">Guía de Estilos</h1>
+            <p class="lead" style="font-size: 1.25rem; color: var(--text-light);">
+                Esta página muestra todos los elementos HTML base y los componentes personalizados disponibles en el tema. Úsala para verificar que todo se ve correctamente.
+            </p>
+        </header>
+
+        <hr>
+
+        <section id="typography">
+            <h2>Tipografía</h2>
+            <div class="card">
+                <h1>Encabezado Nivel 1</h1>
+                <h2>Encabezado Nivel 2</h2>
+                <h3>Encabezado Nivel 3</h3>
+                <h4>Encabezado Nivel 4</h4>
+                <h5>Encabezado Nivel 5</h5>
+                <h6>Encabezado Nivel 6</h6>
+            </div>
+
+            <h3>Párrafos y Texto</h3>
+            <p>Este es un párrafo estándar. Lorem ipsum dolor sit amet, consectetur adipiscing elit. <strong>Este texto está en negrita</strong> y <em>este texto está en cursiva</em>. También podemos tener <a href="#">enlaces en el texto</a> que se ven así. A veces necesitamos <code>código inline</code> para referencias técnicas.</p>
+            <p>Otro párrafo para ver el espaciado entre bloques de texto. Suspendisse potenti. Nullam sed cursus ante. <small>Este es un texto pequeño (small).</small></p>
+
+            <h3>Blockquotes (Citas)</h3>
+            <blockquote>
+                <p>El diseño no es solo lo que se ve y lo que se siente. El diseño es cómo funciona.</p>
+                <cite>— Steve Jobs</cite>
+            </blockquote>
+        </section>
+
+        <hr>
+
+        <section id="lists">
+            <h2>Listas</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <h3>No Ordenada</h3>
+                    <ul>
+                        <li>Elemento de lista uno</li>
+                        <li>Elemento de lista dos
+                            <ul>
+                                <li>Sub-lista elemento A</li>
+                                <li>Sub-lista elemento B</li>
+                            </ul>
+                        </li>
+                        <li>Elemento de lista tres</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Ordenada</h3>
+                    <ol>
+                        <li>Primer paso importante</li>
+                        <li>Segundo paso a seguir
+                            <ol>
+                                <li>Detalle específico</li>
+                                <li>Otro detalle</li>
+                            </ol>
+                        </li>
+                        <li>Resultado final</li>
+                    </ol>
+                </div>
+            </div>
+
+            <h3>Lista de Definición</h3>
+            <dl>
+                <dt>Markdown</dt>
+                <dd>Lenguaje de marcado ligero creado por John Gruber.</dd>
+                <dt>CSS Grid</dt>
+                <dd>Sistema de diseño bidimensional para la web.</dd>
+            </dl>
+        </section>
+
+        <hr>
+
+        <section id="tables">
+            <h2>Tablas</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Producto A</td>
+                        <td>Una herramienta increíble para todo uso.</td>
+                        <td>$19.99</td>
+                        <td>En Stock</td>
+                    </tr>
+                    <tr>
+                        <td>Producto B</td>
+                        <td>Versión avanzada con más funciones.</td>
+                        <td>$29.99</td>
+                        <td>Agotado</td>
+                    </tr>
+                    <tr>
+                        <td>Producto C</td>
+                        <td>La opción económica.</td>
+                        <td>$9.99</td>
+                        <td>En Stock</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2">Total</td>
+                        <td>$59.97</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </section>
+
+        <hr>
+
+        <section id="elements">
+            <h2>Elementos de Interfaz</h2>
+            
+            <h3>Botones</h3>
+            <div class="btn-group">
+                <a href="#" class="btn">Botón Principal</a>
+                <a href="#" class="btn btn-outline">Botón Secundario</a>
+                <button class="btn btn-danger">Peligro</button>
+                <button class="btn" disabled>Deshabilitado</button>
+                <a href="#" class="btn btn-small">Pequeño</a>
+            </div>
+
+            <h3>Alertas y Mensajes</h3>
+            <div class="alert alert-info"><strong>Info:</strong> Aquí hay información relevante para el usuario.</div>
+            <div class="alert alert-success"><strong>Éxito:</strong> La operación se ha completado correctamente.</div>
+            <div class="alert alert-warning"><strong>Cuidado:</strong> Revisa los datos antes de continuar.</div>
+            <div class="alert alert-error"><strong>Error:</strong> Algo ha salido mal, inténtalo de nuevo.</div>
+        </section>
+
+        <hr>
+
+        <section id="forms">
+            <h2>Formularios</h2>
+            <div class="card">
+                <form>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div>
+                            <label for="name">Nombre</label>
+                            <input type="text" id="name" placeholder="Ej: Juan Pérez">
+                        </div>
+                        <div>
+                            <label for="email">Email</label>
+                            <input type="email" id="email" placeholder="juan@ejemplo.com">
+                        </div>
+                    </div>
+
+                    <label for="category">Categoría</label>
+                    <select id="category">
+                        <option value="">Selecciona una opción...</option>
+                        <option value="1">Desarrollo Web</option>
+                        <option value="2">Diseño Gráfico</option>
+                        <option value="3">Marketing</option>
+                    </select>
+
+                    <label for="message">Mensaje</label>
+                    <textarea id="message" placeholder="Escribe tu mensaje aquí..."></textarea>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: inline-flex; align-items: center; font-weight: normal;">
+                            <input type="checkbox" style="width: auto; margin: 0 10px 0 0;"> Acepto los términos y condiciones
+                        </label>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="submit" class="btn">Enviar Formulario</button>
+                        <button type="reset" class="btn btn-outline">Limpiar</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="custom">
+            <h2>Componentes Personalizados (Markdown)</h2>
+            <p>Estos son los componentes que generamos mediante <code>::: clase</code>.</p>
+
+            <h3>Grid Foto-Texto (<code>.foto-texto</code>)</h3>
+            <div class="foto-texto">
+                <div class="img">
+                    <img src="https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&w=800&q=80" alt="Ejemplo">
+                </div>
+                <div class="text">
+                    <h3>Un diseño equilibrado</h3>
+                    <p>Este componente permite alinear una imagen y un texto de forma elegante. En escritorio se ven lado a lado, y en móvil se apilan uno sobre otro.</p>
+                    <p>Es perfecto para destacar características de un producto o presentar una sección visualmente atractiva.</p>
+                    <a href="#" class="btn btn-outline btn-small">Saber más</a>
+                </div>
+            </div>
+
+            <h3>Notas Importantes (<code>.nota-importante</code>)</h3>
+            
+            <div class="nota-importante">
+                <h3>📢 Nota Estándar</h3>
+                <p>Este es el estilo por defecto para notas o avisos dentro del contenido Markdown.</p>
+            </div>
+
+            <div class="nota-importante nota-peligro">
+                <h3>🔥 Zona Peligrosa</h3>
+                <p>Podemos combinar clases para cambiar el significado semántico del aviso.</p>
+            </div>
+
+            <div class="nota-importante nota-exito">
+                <h3>✅ Buen trabajo</h3>
+                <p>Todo ha salido según lo previsto.</p>
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="code">
+            <h2>Código</h2>
+            <p>Bloques de código preformateado:</p>
+            <pre><code>// Ejemplo de código JavaScript
+function saludar(nombre) {
+    console.log(`Hola, ${nombre}!`);
+    return true;
+}
+
+saludar('Usuario');</code></pre>
+        </section>
+
+        <hr>
+        
+        <section>
+            <h2>Imágenes</h2>
+            <h3>Imagen Full Width (<code>.full</code>)</h3>
+        </section>
+    </main>
+
+    <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1600&q=80" class="full" alt="Paisaje ancho">
+
+    <main>
+        <p style="text-align: center; color: var(--text-light); margin-top: 1rem;">
+            <em>La imagen de arriba tiene la clase <code>.full</code> que rompe el contenedor central.</em>
+        </p>
+    </main>
+
+    <footer>
+        <div class="footer-inner">
+            <div>
+                <h4>Kitchen Sink</h4>
+                <p>Plantilla de referencia para desarrollo.</p>
+            </div>
+            <div>
+                <h4>Enlaces</h4>
+                <p><a href="#">Inicio</a> <br> <a href="#">Documentación</a> <br> <a href="#">GitHub</a></p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
