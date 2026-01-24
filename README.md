@@ -46,12 +46,10 @@ EXPOSE 80
 docker-compose.yml
 
 ```bash
-version: '3.8'
-
 services:
-  take-no-prisoners_flat-file:
+  web:
     build: .
-    container_name: take-no-prisoners_flat-file_cms
+    container_name: take-no-prisoners_cms
     ports:
       - "8080:80"
     volumes:
@@ -59,7 +57,7 @@ services:
     restart: always
 ```
 
-3. **Ejecuta el despliegue desde la terminal:** `docker-compose up -d`
+3. **Ejecuta el despliegue desde la terminal:** `docker compose up`
 4. **Accede al sitio a través de tu navegador:** http://localhost:8080
 
 ## 🪾 Estructura del Proyecto
