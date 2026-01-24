@@ -63,3 +63,9 @@ Para que **Take No Prisoners Flat-File** funcione correctamente, asegúrate de m
 ## 🛡️ Seguridad
 
 **Take No Prisoners Flat-File** incluye una capa de limpieza de datos en todas las peticiones y protege las vistas previas de borradores mediante tokens específicos definidos en el front matter de cada archivo.
+
+Coming soon:
+
+- Take No Prisoners Flat-File With Admin Panel v1.0
+- Take No Prisoners Flat-File + Database With Admin Panel v1.0
+- Take No Prisoners Database-Only With Admin Panel v1.0
