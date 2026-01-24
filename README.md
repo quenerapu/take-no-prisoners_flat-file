@@ -68,4 +68,6 @@ Para que **Take No Prisoners Flat-File** funcione correctamente, asegúrate de m
 
 - Take No Prisoners Flat-File With Admin Panel v1.0
 - Take No Prisoners Flat-File + Database With Admin Panel v1.0
+- Take No Prisoners Flat-File + Database With Admin Panel Multitenant v1.0
 - Take No Prisoners Database-Only With Admin Panel v1.0
+- Take No Prisoners Database-Only With Admin Panel Multitenant v1.0
