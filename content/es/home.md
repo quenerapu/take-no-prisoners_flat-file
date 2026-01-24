@@ -10,4 +10,10 @@ Date: 2026-01-23
 
 §DATE
 
-{{test.php}}
+{{test1.php}}
+
+Bla bla bla
+
+{{test2.html}}
+
+:)
