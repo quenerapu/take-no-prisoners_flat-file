@@ -6,7 +6,7 @@
 
 // 1. SEGURIDAD Y CONFIGURACIÓN
 $config = require __DIR__ . '/../config.php';
-$secretToken = 'qq'; // Cambia esto por tu clave personal
+$secretToken = 'TU_TOKEN_SECRETO'; // Cambia esto por tu clave personal
 $providedToken = $_GET['token'] ?? '';
 
 if ($providedToken !== $secretToken) {
