@@ -14,7 +14,7 @@
 
 ## 🚀 Instalación con Docker
 
-**Take No Prisoners Flat-File** está totalmente preparado para funcionar en contenedores. Para levantar tu instancia local en segundos, sigue estos pasos:
+**Take No Prisoners Flat-File** está totalmente preparado para funcionar en contenedores. Para levantar tu instancia local en segundos, si ya tienes Docker instalado en tu máquina, sigue estos pasos:
 
 1. **Clona este repositorio** en tu máquina local.
 2. Como ves, ya incluye los archivos `Dockerfile` y `docker-compose.yml` en la raíz del proyecto.
