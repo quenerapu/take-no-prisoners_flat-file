@@ -2,10 +2,10 @@
 
 **Take No Prisoners Flat-File** es un sistema de gestión de contenidos (CMS) moderno y minimalista, **concebido para operar íntegramente sin bases de datos**. Al utilizar el sistema de archivos como motor principal, ofrece una velocidad de respuesta excepcional y una portabilidad total: basta con copiar la carpeta en cualquier servidor PHP para que el sitio cobre vida.
 
-## ✨ Funcionalidades Clave
+## ✨ Funcionalidades clave
 
-- **Arquitectura Flat-File:** Todo el contenido reside en archivos `.md` dentro de la carpeta `/content`. No requiere base de datos.
-- **Sistema de Snippets Dinámicos:** Inyecta lógica PHP o fragmentos HTML directamente en tus archivos Markdown usando la sintaxis `{{nombre_archivo}}`.
+- **Arquitectura flat-file:** Todo el contenido reside en archivos `.md` dentro de la carpeta `/content`. No requiere base de datos.
+- **Sistema de snippets dinámicos:** Inyecta lógica PHP o fragmentos HTML directamente en tus archivos Markdown usando la sintaxis `{{nombre_archivo}}`.
 - **Búsqueda optimizada por índice:** Utiliza un índice JSON pre-renderizado para ofrecer resultados instantáneos sin consultar el disco en cada petición.
 - **Escaneo de respaldo:** Capaz de rastrear archivos `.md` en tiempo real si el índice no está disponible.
 - **Soporte multi-idioma nativo**: Detección automática de idioma por URL (ej. `/es/hola` vs `/en/hello`).
@@ -21,9 +21,9 @@
 3. **Ejecuta el despliegue desde la terminal:** `docker compose up`.
 4. **Accede al sitio a través de tu navegador:** http://localhost:8080
 
-## 🪾 Estructura del Proyecto
+## 🪾 Estructura del proyecto
 
-Para que el proyecto funcione correctamente, asegúrate de mantener esta jerarquía:
+Para que **Take No Prisoners Flat-File** funcione correctamente, asegúrate de mantener esta jerarquía:
 
 ```
 .
@@ -38,7 +38,7 @@ Para que el proyecto funcione correctamente, asegúrate de mantener esta jerarqu
 ├── sitemap.php          # Generador del sitemap XML
 └── docker-compose.yml   # Configuración de Docker
 ```
-🧩 Gestión de Componentes Inteligentes (Inyección de Assets)
+🧩 Gestión de componentes inteligentes (Inyección de assets)
 
 **Take No Prisoners Flat-File** permite que los snippets funcionen como componentes autónomos. Puedes definir estilos CSS o scripts JavaScript dentro de un snippet y el motor los inyectará automáticamente en el lugar correcto del layout (`<head>` o final del `<body>`).
 
