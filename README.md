@@ -17,47 +17,8 @@
 **Take No Prisoners Flat-File** está totalmente preparado para funcionar en contenedores. Para levantar tu instancia local en segundos, sigue estos pasos:
 
 1. **Clona este repositorio** en tu máquina local.
-2. **Crea los archivos de configuración** (Dockerfile y docker-compose.yml) en la raíz del proyecto.
-
-Dockerfile:
-
-```bash
-# Usamos PHP 8.2 con Apache
-FROM php:8.2-apache
-
-# Activamos el módulo rewrite de Apache para gestionar las URLs amigables del .htaccess
-RUN a2enmod rewrite
-
-# Instalamos dependencias para el procesamiento de texto (necesario para mbstring e intl)
-RUN apt-get update && apt-get install -y \
-    libicu-dev \
-    && docker-php-ext-install intl
-
-# Copiamos el código fuente al contenedor
-COPY . /var/www/html/
-
-# Ajustamos permisos para que el servidor pueda generar el índice JSON y el sitemap
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
-
-EXPOSE 80
-```
-
-docker-compose.yml
-
-```bash
-services:
-  web:
-    build: .
-    container_name: take-no-prisoners_cms
-    ports:
-      - "8080:80"
-    volumes:
-      - .:/var/www/html
-    restart: always
-```
-
-3. **Ejecuta el despliegue desde la terminal:** `docker compose up`
+2. Como ves, ya incluye los archivos `Dockerfile` y `docker-compose.yml` en la raíz del proyecto.
+3. **Ejecuta el despliegue desde la terminal:** `docker compose up`.
 4. **Accede al sitio a través de tu navegador:** http://localhost:8080
 
 ## 🪾 Estructura del Proyecto
