@@ -1,0 +1,18 @@
+# Controlling Caching with Cache-Control
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|js|jpe?g|png|gif|pdf|swf|ico)$">
+    Header set Cache-Control "public, max-age=31536000"
+  </FilesMatch>
+  <FilesMatch "\.(html|xml|txt|xsl)$">
+    Header set Cache-Control "private, max-age=86400"
+  </FilesMatch>
+  <FilesMatch "\.(php|cgi|pl|asp)$">
+    Header set Cache-Control "private, no-cache, no-store, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
