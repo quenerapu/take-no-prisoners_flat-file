@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    container_name: take-no-prisoners_cms
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    restart: always
