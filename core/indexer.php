@@ -116,7 +116,7 @@ if (!is_writable($contentDir)) {
     echo "<h1>❌ Error de Escritura</h1>";
     echo "<p>El servidor no tiene permisos para escribir en <code>/content</code>.</p>";
     echo "<p><strong>Si usas Docker, ejecuta:</strong><br>";
-    echo "<code>docker exec -u 0 -it take-no-prisoners_cms chown -R www-data:www-data /var/www/html/content</code></p>";
+    echo "<code>docker exec -u 0 -it take-no-prisoners_cms chown -R www-data:www-data /var/www/html/content</code> para darle permisos al usuario www-data o, si lo estás usando en local, <code>chmod -R 777 content/</code> para darle permisos a todo el mundo. 🤗</p>";
     exit;
 }
 
