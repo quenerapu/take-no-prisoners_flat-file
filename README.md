@@ -63,7 +63,7 @@ Para que **Take No Prisoners Flat-File** funcione correctamente, asegúrate de m
 
 ## 🧩 Creación y actualización del archivo content/search_index.json
 
-Ejecuta el script con core/indexer.php?token=TU_TOKEN_SECRETO
+Ejecuta el script con `tudominio.com` /core/indexer.php?token=TU_TOKEN_SECRETO
 
 Para tener tu propio token, edita el archivo core/indexer.php y en la línea:
 ```php
