@@ -38,7 +38,8 @@ Para que **Take No Prisoners Flat-File** funcione correctamente, asegúrate de m
 ├── sitemap.php          # Generador del sitemap XML
 └── docker-compose.yml   # Configuración de Docker
 ```
-🧩 Gestión de componentes inteligentes (Inyección de assets)
+
+## 🧩 Gestión de componentes inteligentes (Inyección de assets)
 
 **Take No Prisoners Flat-File** permite que los snippets funcionen como componentes autónomos. Puedes definir estilos CSS o scripts JavaScript dentro de un snippet y el motor los inyectará automáticamente en el lugar correcto del layout (`<head>` o final del `<body>`).
 
@@ -59,6 +60,16 @@ Para que **Take No Prisoners Flat-File** funcione correctamente, asegúrate de m
     <script>console.log('Componente cargado');</script>
 </x-footer>
 ```
+
+## 🧩 Creación y actualización del archivo content/search_index.json
+
+Ejecuta el script con core/indexer.php?token=TU_TOKEN_SECRETO
+
+Para tener tu propio token, edita el archivo core/indexer.php y en la línea:
+```php
+$secretToken = 'TU_TOKEN_SECRETO';
+```
+pon la palabra clave que quieras en lugar de `TU_TOKEN_SECRETO`.
 
 ## 🛡️ Seguridad
 
