@@ -60,6 +60,7 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 2rem;
 
     & .site-title {
       font-size: 1.5rem;
@@ -102,8 +103,9 @@ footer {
     max-width: var(--max-width);
     margin: 0 auto;
     padding: 0 1.5rem;
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 2rem;
     
     @media (min-width: 768px) {
