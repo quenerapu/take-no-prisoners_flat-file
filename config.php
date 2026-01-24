@@ -4,7 +4,7 @@ return [
   'app_version' => '1.0.0',
   'cache_enabled' => false,
   'base_url'    => 'https://your-domain.com',
-  'name'        => 'Mi personal project',
+  'name'        => 'Take no prisoners',
   'description' => 'Whatever you want.',
   'author'      => 'Your name',
   'twitter'     => '@your-username',
