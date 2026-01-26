@@ -105,15 +105,35 @@ else {
     }
 
     // LÓGICA DE BORRADOR (DRAFT) POR ARCHIVO
-    if (isset($meta['draft']) && in_array(strtolower($meta['draft']), ['true','1','yes'])) {
+    if (isset($meta['draft'])) {
+        $draftValue = strtolower(trim($meta['draft']));
         $draftToken = class_exists('Core\Request') ? Core\Request::get('draft', '') : '';
-        if ($meta['draft'] !== $draftToken) {
+
+        // CASO 1: Draft: true (o 1, o yes) -> Siempre invisible públicamente
+        if (in_array($draftValue, ['true', '1', 'yes', ''])) {
+            $isAuthorized = false;
+        } 
+        // CASO 2: Draft: palabra -> Visible solo si ?draft=palabra
+        else {
+            $isAuthorized = ($draftValue === strtolower($draftToken));
+        }
+
+        if (!$isAuthorized) {
             http_response_code(404);
-            $htmlContent = "<h1>No encontrado</h1>";
-            $meta['title'] = "404";
+            // Intentar cargar 404 personalizado si no estamos autorizados
+            $file404 = "content/$currentLang/404.md";
+            if (file_exists($file404)) {
+                $engine = new Core\Content(file_get_contents($file404), null, $config, $currentLang);
+                $htmlContent = $engine->html;
+                $meta = $engine->meta;
+            } else {
+                $htmlContent = "<h1>404 Not Found</h1>";
+                $meta['title'] = "404 Not Found";
+            }
             $accumulatedHeader = $accumulatedFooter = '';
         } else {
-            $htmlContent = '<div style="background:#fff3cd;padding:10px;border:1px solid #ffeeba;color:#856404;margin-bottom:20px;">👁️ Vista Previa de Borrador</div>' . $htmlContent;
+            // Si está autorizado por palabra clave, mostrar aviso de borrador
+            $htmlContent = '<div style="background:#fff3cd;padding:15px;border:1px solid #ffeeba;color:#856404;margin-bottom:20px;border-radius:4px;font-family:sans-serif;">👁️ <strong>Modo Previsualización:</strong> Estás viendo un borrador protegido.</div>' . $htmlContent;
         }
     }
 }
