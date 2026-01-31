@@ -89,7 +89,10 @@ Si estás ejecutando localmente **Take No Prisoners Flat-File** en Docker es pos
 
 ## 🤟 Agradecimientos
 
+- Proyecto desarrollado en un viejo [Notebook Acer Travelmate B115M] de 2014 y una [Raspberry Pi 5].
 - [Coded with Megadeth as background music].
 
 
 [Coded with Megadeth as background music]: https://www.youtube.com/watch?v=l6x_OhDKivA
+[Notebook Acer Travelmate B115M]: https://www.xataka.com/ordenadores/un-portatil-sin-ventiladores-es-posible-acer-travelmate-b115
+[Raspberry Pi 5]: https://www.raspberrypi.com/products/raspberry-pi-5/
