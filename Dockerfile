@@ -1,6 +1,8 @@
 # 1. Usamos la imagen oficial de PHP 8.2 con Apache
 FROM php:8.2-apache
 
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
 # 2. Activamos el módulo rewrite de Apache (esencial para los .htaccess y URLs amigables)
 RUN a2enmod rewrite
 
