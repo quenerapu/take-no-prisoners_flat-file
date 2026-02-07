@@ -1,35 +1,40 @@
-# 1. Usamos la imagen oficial de PHP 8.2 con Apache
-FROM php:8.2-apache
+FROM php:8.3-apache
 
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# 2. Activamos el módulo rewrite de Apache (esencial para los .htaccess y URLs amigables)
-RUN a2enmod rewrite
+# Instalador de extensiones
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
-# 3. Instalamos dependencias del sistema y extensiones de PHP necesarias
-# - libicu-dev e intl: para el manejo correcto de caracteres internacionales y fechas
-RUN apt-get update && apt-get install -y \
-    libicu-dev \
-    && docker-php-ext-install intl \
-    && rm -rf /var/lib/apt/lists/*
+# Módulos de Apache obligatorios
+RUN a2enmod rewrite ssl
 
-# 4. Establecemos el directorio de trabajo
+# Instalación: Dependencias sistema + Extensiones PHP
+RUN chmod +x /usr/local/bin/install-php-extensions && \
+    apt-get update && apt-get install -y \
+    git \
+    zip \
+    unzip \
+    imagemagick \
+    && \
+    install-php-extensions \
+    xdebug \
+    mbstring \
+    gd \
+    zip \
+    intl \
+    exif \
+    imagick
+
+# Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Ajuste de usuario
+# RUN usermod -u 1000 www-data
+
+# OJO, que exista .podman/vhost.conf
+COPY .podman/vhost.conf /etc/apache2/sites-available/000-default.conf
+
 WORKDIR /var/www/html
 
-# 5. Copiamos los archivos del proyecto al contenedor
-# Nota: Si usas volúmenes en docker-compose, estos archivos se verán 
-# sobrescritos por tu carpeta local en desarrollo.
-COPY . /var/www/html/
-
-# 6. GESTIÓN DE PERMISOS (Crucial para el Indexer y Sitemap)
-# Creamos la carpeta de contenido por si no existe y ajustamos el propietario
-# al usuario 'www-data' (el que usa Apache por defecto).
-RUN mkdir -p /var/www/html/content && \
-    chown -R www-data:www-data /var/www/html && \
-    chmod -R 755 /var/www/html
-
-# 7. Exponemos el puerto 80
-EXPOSE 80
-
-# 8. Iniciamos Apache en el primer plano
-CMD ["apache2-foreground"]
+RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf
+RUN sed -i 's/Listen 443/Listen 8443/' /etc/apache2/ports.conf
