@@ -1,9 +1,19 @@
 services:
   web:
     build: .
-    container_name: take-no-prisoners_cms
-    ports:
-      - "8080:80"
-    volumes:
-      - .:/var/www/html:Z
+    image: localhost/${PROJECT_NAME}_image:latest
+    container_name: ${PROJECT_NAME}_web
+    userns_mode: "keep-id"
     restart: unless-stopped
+    ports:
+      - "8080:8080"  # HTTP
+      - "8443:8443"  # HTTPS
+    volumes:
+      - ./:/var/www/html:Z
+      - ./certs:/etc/apache2/certs:Z
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html
+
+networks:
+  default:
+    name: ${PROJECT_NAME}_network
