@@ -1,0 +1,9 @@
+mkcert -install
+mkdir -p certs
+cd certs
+mkcert localhost 127.0.0.1 ::1
+
+localhost+2.pem (El certificado público)
+localhost+2-key.pem (La clave privada)
+
+(El +2 significa que cubre "localhost" más otras 2 direcciones extra).
