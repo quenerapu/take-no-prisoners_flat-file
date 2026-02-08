@@ -253,7 +253,7 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
             $ext=strtolower(pathinfo($item,PATHINFO_EXTENSION)); 
             if(($type==='content'&&$ext==='md') || 
                ($type==='snippets' && in_array($ext, ['md', 'php', 'html', 'htm'])) ||
-               ($type==='media'&&in_array($ext,['jpg','jpeg','png','gif','webp','svg']))) $files[]=$item; 
+               ($type==='media'&&in_array($ext,['jpg','jpeg','png','gif','webp','avif','svg']))) $files[]=$item; 
         } 
     }
     sort($folders); sort($files); echo '<ul class="file-tree">';
