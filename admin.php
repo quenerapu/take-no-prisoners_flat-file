@@ -34,6 +34,9 @@ function recursiveCopy($src, $dst) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = Core\Request::post('action');
 
+    /**
+     * ACCIÓN: run_indexer (Unificada con indexer.php y con limpieza profunda)
+     */
     if ($action === 'run_indexer') {
         $searchIndex = [];
         $languages = array_keys($config['languages'] ?? ['es' => []]);
@@ -74,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
 
-                    // 2. FILTRADO DE BORRADORES (Mejora solicitada)
+                    // 2. FILTRADO DE BORRADORES
                     if (isset($meta['draft'])) {
                         $dv = strtolower(trim($meta['draft']));
                         if (in_array($dv, ['true', '1', 'yes', ''])) continue;
@@ -84,7 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $title = $meta['title'] ?? $file->getBasename('.md');
                     $body = str_replace(['§TITLE', '§LANG'], [$title, $lang], $markdownBody);
                     
-                    // Procesar Snippets de forma recursiva (máx 1 nivel para índice)
                     $body = preg_replace_callback('/\{\{(.*?)\}\}/', function($m) use ($snippetsDir) {
                         $name = trim($m[1]);
                         $path = $snippetsDir . '/' . $name;
@@ -99,7 +101,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         return "";
                     }, $body);
 
-                    $cleanText = strip_tags($pd->text($body));
+                    // 4. LIMPIEZA PROFUNDA (Igual que en indexer.php)
+                    $html = $pd->text($body);
+                    // Eliminar bloques de <style> y <script> con su contenido
+                    $cleanHtml = preg_replace('/<(style|script)\b[^>]*>.*?<\/\1>/is', '', $html);
+                    // Eliminar etiquetas x-header/x-footer
+                    $cleanHtml = preg_replace('/<\/?x-(header|footer)[^>]*>/i', '', $cleanHtml);
+
+                    $cleanText = strip_tags($cleanHtml);
                     $cleanText = preg_replace('/\s+/', ' ', $cleanText);
                     $slug = str_replace([$contentDir, '.md', '\\'], ['', '', '/'], $file->getPathname());
 
