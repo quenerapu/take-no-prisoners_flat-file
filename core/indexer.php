@@ -6,7 +6,7 @@
 
 // 1. SEGURIDAD Y CONFIGURACIÓN
 $config = require __DIR__ . '/../config.php';
-$secretToken = 'TU_TOKEN_SECRETO'; // Cambia esto por tu clave personal
+$secretToken = 'TU_TOKEN_SECRETO'; 
 $providedToken = $_GET['token'] ?? '';
 
 if ($providedToken !== $secretToken) {
@@ -61,18 +61,18 @@ foreach ($languages as $lang) {
                     }
                 }
             }
+
+            // B. Validar si es un borrador (Draft)
             if (isset($meta['draft'])) {
                 $draftValue = strtolower(trim($meta['draft']));
                 if (in_array($draftValue, ['true', '1', 'yes', ''])) {
                     continue; 
                 }
             }
-            // ----------------------------------------
 
-            // B. Sustituir Variables Mágicas (§TITLE, §DATE, §LANG)
+            // C. Sustituir Variables Mágicas (§TITLE, §DATE, §LANG)
             $title = $meta['title'] ?? $file->getBasename('.md');
-            $processedBody = str_replace('§TITLE', $title, $markdownBody);
-            $processedBody = str_replace('§LANG', $lang, $processedBody);
+            $processedBody = str_replace(['§TITLE', '§LANG'], [$title, $lang], $markdownBody);
             
             if (isset($meta['date'])) {
                 $dateFn = $config['languages'][$lang]['date'] ?? null;
@@ -81,8 +81,8 @@ foreach ($languages as $lang) {
                 $processedBody = str_replace('§DATE', $formattedDate, $processedBody);
             }
 
-            // C. Procesamiento de Snippets ({{archivo.php}})
-            $processedBody = preg_replace_callback('/\{\{(.*?)\}\}/', function($m) use ($lang) {
+            // D. Procesamiento de Snippets ({{archivo.php}})
+            $processedBody = preg_replace_callback('/\{\{(.*?)\}\}/', function($m) {
                 $sDir = __DIR__ . '/../snippets/';
                 $path = $sDir . trim($m[1]);
                 if (!strpos($path, '.')) $path .= '.php'; 
@@ -97,11 +97,21 @@ foreach ($languages as $lang) {
                 return "";
             }, $processedBody);
 
-            // D. Renderizado a HTML y limpieza de etiquetas
+            // E. Renderizado y LIMPIEZA PROFUNDA DE CÓDIGO (CSS/JS)
             $html = $pd->text($processedBody);
-            $cleanText = strip_tags($html);
-            $cleanText = preg_replace('/\s+/', ' ', $cleanText);
 
+            // 1. Eliminar bloques de <style> y <script> con su contenido interno
+            $cleanHtml = preg_replace('/<(style|script)\b[^>]*>.*?<\/\1>/is', '', $html);
+
+            // 2. Eliminar etiquetas de componentes personalizados
+            $cleanHtml = preg_replace('/<\/?x-(header|footer)[^>]*>/i', '', $cleanHtml);
+
+            // 3. Limpiar etiquetas HTML restantes y normalizar espacios
+            $cleanText = strip_tags($cleanHtml);
+            $cleanText = preg_replace('/\s+/', ' ', $cleanText);
+            $cleanText = trim($cleanText);
+
+            // F. Generar el Slug relativo
             $slug = str_replace([$contentDir, '.md', '\\'], ['', '', '/'], $file->getPathname());
             
             $searchIndex[$lang][] = [
@@ -114,12 +124,17 @@ foreach ($languages as $lang) {
     }
 }
 
-// 4. ESCRITURA
+// 4. ESCRITURA DEL ÍNDICE
 if (!is_writable($contentDir)) {
     http_response_code(500);
-    die("Error de escritura en content/");
+    die("Error: No se puede escribir en el directorio de contenido.");
 }
 
 $jsonOutput = json_encode($searchIndex, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-file_put_contents($indexFile, $jsonOutput);
-echo "Índice actualizado correctamente.";
+
+if (file_put_contents($indexFile, $jsonOutput)) {
+    echo "<h1>✅ Índice actualizado y limpio</h1>";
+    echo "<p>Contenido técnico (CSS/JS) filtrado de la búsqueda.</p>";
+} else {
+    echo "<h1>❌ Error Crítico</h1>";
+}
