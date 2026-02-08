@@ -42,8 +42,8 @@
     <div class="header-inner">
       <a href="<?= $config['base_url'] ?>/" class="site-title"><?= htmlspecialchars($config['name'] ?? 'Wiki') ?></a>
       
-      <form action="<?= $config['base_url'] ?>/search" method="get" class="search-form">
-          <input type="text" name="q" placeholder="Buscar..." required>
+      <form action="<?= $config['base_url'] ?>/<?= ($currentLang !== 'es') ? $currentLang . '/' : '' ?>search" method="get" class="search-form">
+          <input type="text" name="q" placeholder="Buscar..." value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '' ?>"required>
       </form>
     </div>
   </header>
