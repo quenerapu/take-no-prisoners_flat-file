@@ -72,7 +72,7 @@ class Helpers
             $path = $dir . '/' . $item;
             $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
             
-            if (!is_dir($path) && in_array($ext, ['jpg','jpeg','png','gif','webp','svg'])) {
+            if (!is_dir($path) && in_array($ext, ['jpg','jpeg','png','gif','webp','avif','svg'])) {
                 $results[] = [
                     'path' => ($base ? $base . '/' : '') . $item, 
                     'name' => $item
