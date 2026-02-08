@@ -1,6 +1,6 @@
 <?php
 /**
- * GENERADOR DE ÍNDICE DE BÚSQUEDA (v4 - FORMATO BONITO)
+ * GENERADOR DE ÍNDICE DE BÚSQUEDA
  * Ejecución: indexer.php?token=TU_TOKEN_SECRETO
  */
 
@@ -15,7 +15,6 @@ if ($providedToken !== $secretToken) {
 }
 
 // 2. CARGA DE LIBRERÍAS Y RUTAS
-// Importante: Asegúrate de que ExtensionParsedown.php esté en esta ruta
 $libPath = dirname(__DIR__) . '/includes/libs/ExtensionParsedown.php';
 if (!file_exists($libPath)) {
     die("Error: No se encuentra ExtensionParsedown.php en $libPath");
@@ -45,7 +44,6 @@ foreach ($languages as $lang) {
     foreach ($iterator as $file) {
         if ($file->isFile() && $file->getExtension() === 'md') {
             
-            // Excluir página 404
             if ($file->getBasename('.md') === '404') continue;
 
             $rawContent = file_get_contents($file->getPathname());
@@ -63,6 +61,13 @@ foreach ($languages as $lang) {
                     }
                 }
             }
+            if (isset($meta['draft'])) {
+                $draftValue = strtolower(trim($meta['draft']));
+                if (in_array($draftValue, ['true', '1', 'yes', ''])) {
+                    continue; 
+                }
+            }
+            // ----------------------------------------
 
             // B. Sustituir Variables Mágicas (§TITLE, §DATE, §LANG)
             $title = $meta['title'] ?? $file->getBasename('.md');
@@ -92,12 +97,11 @@ foreach ($languages as $lang) {
                 return "";
             }, $processedBody);
 
-            // D. Renderizado a HTML y limpieza de etiquetas para el índice
+            // D. Renderizado a HTML y limpieza de etiquetas
             $html = $pd->text($processedBody);
             $cleanText = strip_tags($html);
             $cleanText = preg_replace('/\s+/', ' ', $cleanText);
 
-            // E. Generar el Slug relativo
             $slug = str_replace([$contentDir, '.md', '\\'], ['', '', '/'], $file->getPathname());
             
             $searchIndex[$lang][] = [
@@ -110,22 +114,12 @@ foreach ($languages as $lang) {
     }
 }
 
-// 4. VALIDACIÓN DE PERMISOS Y ESCRITURA
+// 4. ESCRITURA
 if (!is_writable($contentDir)) {
     http_response_code(500);
-    echo "<h1>❌ Error de Escritura</h1>";
-    echo "<p>El servidor no tiene permisos para escribir en <code>/content</code>.</p>";
-    echo "<p><strong>Si usas Docker, ejecuta:</strong><br>";
-    echo "<code>docker exec -u 0 -it take-no-prisoners_cms chown -R www-data:www-data /var/www/html/content</code> para darle permisos al usuario www-data o, si lo estás usando en local, <code>chmod -R 777 content/</code> para darle permisos a todo el mundo. 🤗</p>";
-    exit;
+    die("Error de escritura en content/");
 }
 
 $jsonOutput = json_encode($searchIndex, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-if (file_put_contents($indexFile, $jsonOutput)) {
-    echo "<h1>✅ Índice actualizado correctamente</h1>";
-    echo "<p>Se han indexado los archivos de " . count($languages) . " idioma(s).</p>";
-    echo "<p>Archivo generado: <code>content/search_index.json</code></p>";
-} else {
-    echo "<h1>❌ Error Crítico</h1><p>No se pudo guardar el archivo JSON.</p>";
-}
+file_put_contents($indexFile, $jsonOutput);
+echo "Índice actualizado correctamente.";
