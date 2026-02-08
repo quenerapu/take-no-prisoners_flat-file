@@ -35,23 +35,88 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = Core\Request::post('action');
 
     if ($action === 'run_indexer') {
-        $index = [];
-        if (is_dir($contentDir)) {
-            $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($contentDir));
-            foreach ($files as $file) {
+        $searchIndex = [];
+        $languages = array_keys($config['languages'] ?? ['es' => []]);
+        $libPath = __DIR__ . '/includes/libs/ExtensionParsedown.php';
+        
+        if (!file_exists($libPath)) {
+            header('Content-Type: application/json', true, 500);
+            echo json_encode(['status' => 'error', 'message' => 'Librería Parsedown no encontrada']);
+            exit;
+        }
+        
+        require_once $libPath;
+        $pd = new \ExtensionParsedown();
+
+        foreach ($languages as $lang) {
+            $searchIndex[$lang] = [];
+            $langPath = $contentDir . DIRECTORY_SEPARATOR . $lang;
+            if (!is_dir($langPath)) continue;
+
+            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($langPath));
+
+            foreach ($iterator as $file) {
                 if ($file->isFile() && $file->getExtension() === 'md') {
-                    $content = file_get_contents($file->getPathname());
-                    $relativePath = ltrim(str_replace($contentDir, '', $file->getPathname()), DIRECTORY_SEPARATOR);
-                    $publicPath = str_replace('\\', '/', preg_replace('/\.md$/i', '', $relativePath));
-                    preg_match('/Title:\s*(.*)/i', $content, $matches);
-                    $title = isset($matches[1]) ? trim($matches[1]) : $file->getBasename('.md');
-                    $cleanContent = strip_tags(preg_replace('/---.*?---/s', '', $content));
-                    $index[] = ['title' => $title, 'path'  => $publicPath, 'body'  => mb_substr($cleanContent, 0, 500)];
+                    if ($file->getBasename('.md') === '404') continue;
+
+                    $rawContent = file_get_contents($file->getPathname());
+                    $meta = [];
+                    $markdownBody = $rawContent;
+
+                    // 1. Extraer Front Matter
+                    if (preg_match('/^---[\r\n]+(.*?)[\r\n]+---[\r\n]+(.*)/s', $rawContent, $matches)) {
+                        $markdownBody = $matches[2];
+                        foreach (explode("\n", $matches[1]) as $line) {
+                            if (strpos($line, ':') !== false) {
+                                list($k, $v) = explode(':', $line, 2);
+                                $meta[strtolower(trim($k))] = trim($v);
+                            }
+                        }
+                    }
+
+                    // 2. FILTRADO DE BORRADORES (Mejora solicitada)
+                    if (isset($meta['draft'])) {
+                        $dv = strtolower(trim($meta['draft']));
+                        if (in_array($dv, ['true', '1', 'yes', ''])) continue;
+                    }
+
+                    // 3. Procesar contenido (Variables Mágicas y Snippets)
+                    $title = $meta['title'] ?? $file->getBasename('.md');
+                    $body = str_replace(['§TITLE', '§LANG'], [$title, $lang], $markdownBody);
+                    
+                    // Procesar Snippets de forma recursiva (máx 1 nivel para índice)
+                    $body = preg_replace_callback('/\{\{(.*?)\}\}/', function($m) use ($snippetsDir) {
+                        $name = trim($m[1]);
+                        $path = $snippetsDir . '/' . $name;
+                        if (!strpos($path, '.')) $path .= '.php';
+                        
+                        if (file_exists($path)) {
+                            if (pathinfo($path, PATHINFO_EXTENSION) === 'php') {
+                                ob_start(); include $path; return ob_get_clean();
+                            }
+                            return file_get_contents($path);
+                        }
+                        return "";
+                    }, $body);
+
+                    $cleanText = strip_tags($pd->text($body));
+                    $cleanText = preg_replace('/\s+/', ' ', $cleanText);
+                    $slug = str_replace([$contentDir, '.md', '\\'], ['', '', '/'], $file->getPathname());
+
+                    $searchIndex[$lang][] = [
+                        'slug'        => ltrim($slug, '/'),
+                        'title'       => $title,
+                        'description' => $meta['description'] ?? '',
+                        'content'     => mb_substr($cleanText, 0, 5000, 'UTF-8')
+                    ];
                 }
             }
         }
-        file_put_contents($contentDir . '/search_index.json', json_encode($index, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-        header('Content-Type: application/json'); echo json_encode(['status' => 'success']); exit;
+        
+        file_put_contents($contentDir . '/search_index.json', json_encode($searchIndex, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+        header('Content-Type: application/json'); 
+        echo json_encode(['status' => 'success']); 
+        exit;
     }
 
     if ($action === 'create' || $action === 'create_folder_media') { 
