@@ -1,14 +1,15 @@
 <?php
 $query = isset($_GET['q']) ? trim($_GET['q']) : '';
 
-echo "<h1>Resultados para: " . htmlspecialchars($query) . "</h1>";
+$titulo = ($currentLang === 'en') ? "Search results for: " : "Resultados para: ";
+echo "<h1>" . $titulo . htmlspecialchars($query) . "</h1>";
 
-if (strlen($query) < 2) {
-    echo "<p>El término de búsqueda es demasiado corto. Por favor escribe al menos 2 caracteres.</p>";
+if (mb_strlen($query) < 2) {
+    $error = ($currentLang === 'en') ? "Search term too short. Please enter at least 2 characters." : "El término de búsqueda es demasiado corto. Por favor escribe al menos 2 caracteres.";
+    echo "<p>$error</p>";
 } else {
     if (class_exists('Core\Search')) {
         
-        // El primer parámetro es nulo porque PDO ha desaparecido
         $searchEngine = new Core\Search(null, $config, $currentLang ?? 'es');
         $results = $searchEngine->search($query);
 
@@ -22,7 +23,8 @@ if (strlen($query) < 2) {
             }
             echo '</ul>';
         } else {
-            echo "<p>No se encontraron resultados que coincidan con tu búsqueda.</p>";
+            $noResults = ($currentLang === 'en') ? "No results found for your search." : "No se encontraron resultados que coincidan con tu búsqueda.";
+            echo "<p>$noResults</p>";
         }
     }
 }
