@@ -1,6 +1,6 @@
 <?php
 // -----------------------------------------------------------------------------
-// CMS FRONT CONTROLLER (V5.0 - 100% FLAT-FILE)
+// CMS FRONT CONTROLLER (V5.2)
 // -----------------------------------------------------------------------------
 
 ini_set('display_errors', 1);
@@ -9,7 +9,7 @@ error_reporting(E_ALL);
 // 1. CARGA DE CONFIGURACIÓN
 $config = require 'config.php';
 
-// 2. CARGA DE DEPENDENCIAS (Solo archivos del núcleo flat-file)
+// 2. CARGA DE DEPENDENCIAS
 $dependencies = [
     'core/Content.php',
     'core/Request.php',
@@ -47,7 +47,6 @@ if (count($validLangs) > 1) {
     }
 }
 
-// INICIAR BUFFER PRINCIPAL
 ob_start();
 
 // -----------------------------------------------------------------------------
@@ -59,7 +58,6 @@ $meta = [];
 $accumulatedHeader = '';
 $accumulatedFooter = '';
 
-// CASO 1: BÚSQUEDA INTERNA
 if ($slug === 'search') {
     ob_start();
     if (file_exists('includes/search.php')) {
@@ -68,19 +66,36 @@ if ($slug === 'search') {
         echo "<h1>Módulo de búsqueda no encontrado</h1>";
     }
     $htmlContent = ob_get_clean();
-    
     $qLabel = isset($_GET['q']) ? ': ' . htmlspecialchars($_GET['q']) : '';
     $meta['title'] = 'Búsqueda' . $qLabel;
 } 
-// CASO 2: PÁGINAS NORMALES
 else {
     $filename = empty($slug) ? 'home' : $slug;
-    $tryFile = "content/$currentLang/$filename.md";
+    $currentContentDir = "content/$currentLang/";
+    $tryFile = $currentContentDir . $filename . ".md";
+
+    // LÓGICA DE CARPETA ÍNDICE (Corregida para evitar bucles)
+    $potentialDir = $currentContentDir . $filename;
+    if (!empty($slug) && is_dir($potentialDir)) {
+        
+        // Obtenemos el path real de la URL para comparar la barra final
+        $uriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        
+        // Si la URL no termina en barra, redirigimos una sola vez
+        if (substr($uriPath, -1) !== '/') {
+            header("Location: " . $config['base_url'] . "/" . trim($requestRaw, '/') . "/", true, 301);
+            exit;
+        }
+
+        $folderHome = $potentialDir . "/home.md";
+        if (file_exists($folderHome)) {
+            $tryFile = $folderHome;
+        }
+    }
 
     if (file_exists($tryFile)) {
         if (class_exists('Core\Content')) {
             $rawContent = file_get_contents($tryFile);
-            // El motor ahora solo recibe el contenido y la config
             $engine = new Core\Content($rawContent, null, $config, $currentLang);
             
             $htmlContent = $engine->html;
@@ -92,7 +107,6 @@ else {
         }
     } else {
         http_response_code(404);
-        // Intento de cargar 404.md personalizado
         $file404 = "content/$currentLang/404.md";
         if (file_exists($file404)) {
             $engine = new Core\Content(file_get_contents($file404), null, $config, $currentLang);
@@ -104,23 +118,20 @@ else {
         }
     }
 
-    // LÓGICA DE BORRADOR (DRAFT) POR ARCHIVO
+    // LÓGICA DE BORRADOR (DRAFT)
     if (isset($meta['draft'])) {
         $draftValue = strtolower(trim($meta['draft']));
         $draftToken = class_exists('Core\Request') ? Core\Request::get('draft', '') : '';
 
-        // CASO 1: Draft: true (o 1, o yes) -> Siempre invisible públicamente
         if (in_array($draftValue, ['true', '1', 'yes', ''])) {
             $isAuthorized = false;
         } 
-        // CASO 2: Draft: palabra -> Visible solo si ?draft=palabra
         else {
             $isAuthorized = ($draftValue === strtolower($draftToken));
         }
 
         if (!$isAuthorized) {
             http_response_code(404);
-            // Intentar cargar 404 personalizado si no estamos autorizados
             $file404 = "content/$currentLang/404.md";
             if (file_exists($file404)) {
                 $engine = new Core\Content(file_get_contents($file404), null, $config, $currentLang);
@@ -132,7 +143,6 @@ else {
             }
             $accumulatedHeader = $accumulatedFooter = '';
         } else {
-            // Si está autorizado por palabra clave, mostrar aviso de borrador
             $htmlContent = '<div style="background:#fff3cd;padding:15px;border:1px solid #ffeeba;color:#856404;margin-bottom:20px;border-radius:4px;font-family:sans-serif;">👁️ <strong>Modo Previsualización:</strong> Estás viendo un borrador protegido.</div>' . $htmlContent;
         }
     }
