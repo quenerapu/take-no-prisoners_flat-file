@@ -6,14 +6,16 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-$config = require 'config.php';
-require_once 'core/Request.php';
-require_once 'core/Helpers.php';
+$route = "admin" === basename(__FILE__, '.php') ? "" : "../";
+
+$config = require $route . 'config.php';
+require_once $route . 'core/Request.php';
+require_once $route . 'core/Helpers.php';
 
 $appName    = $config['app_name'] ?? 'Grijander Local';
-$contentDir = __DIR__ . '/content';
-$mediaDir   = __DIR__ . '/media';
-$snippetsDir = __DIR__ . '/snippets';
+$contentDir  = realpath(__DIR__ . '/' . $route . 'content');
+$mediaDir    = realpath(__DIR__ . '/' . $route . 'media');
+$snippetsDir = realpath(__DIR__ . '/' . $route . 'snippets');
 $self       = basename($_SERVER['PHP_SELF']);
 
 if (!is_dir($snippetsDir)) mkdir($snippetsDir, 0777, true);
@@ -40,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'run_indexer') {
         $searchIndex = [];
         $languages = array_keys($config['languages'] ?? ['es' => []]);
-        $libPath = __DIR__ . '/includes/libs/ExtensionParsedown.php';
+        $libPath = __DIR__ . '/'.$route.'includes/libs/ExtensionParsedown.php';
         
         if (!file_exists($libPath)) {
             header('Content-Type: application/json', true, 500);
@@ -103,9 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // 4. LIMPIEZA PROFUNDA (Igual que en indexer.php)
                     $html = $pd->text($body);
-                    // Eliminar bloques de <style> y <script> con su contenido
                     $cleanHtml = preg_replace('/<(style|script)\b[^>]*>.*?<\/\1>/is', '', $html);
-                    // Eliminar etiquetas x-header/x-footer
                     $cleanHtml = preg_replace('/<\/?x-(header|footer)[^>]*>/i', '', $cleanHtml);
 
                     $cleanText = strip_tags($cleanHtml);
@@ -142,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!file_exists($fullPath)) {
                 $ext = pathinfo($n, PATHINFO_EXTENSION);
                 if ($activeTab === 'content') {
-                    $template = "---\n\nTitle: Nuevo\nDescription: \nDate: ".date('Y-m-d')."\nDraft: true\n\n---\n\n# §TITLE";
+                    $template = "---\n\nTitle: Nuevo\nDescription: \nDate: ".date('Y-m-d')."\nDraft: true\n\n---\n\n{{breadcrumb.php}}\n\n# §TITLE\n\n§DATE\n\n";
                 } else {
                     if ($ext === 'php') $template = "<?php echo \"Snippet\"; ?>";
                     elseif (in_array($ext, ['html', 'htm'])) $template = "<x-header>\n    <style></style>\n</x-header>\n\nSnippet\n\n<x-footer>\n    <script></script>\n</x-footer>";
@@ -394,7 +394,7 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
         <?php elseif($activeTab==='media'): ?>
             <div class="media-scroll-container">
                 <?php if($currentFile): ?>
-                    <div style="text-align:center; background:white; padding:20px; border-radius:8px; border:1px solid #e2e8f0;"><img src="media/<?= $currentFile ?>" style="max-height:60vh; max-width:100%;"><div style="margin-top:15px; display:flex; justify-content:center; gap:10px;"><button id="btnCopyPath" class="btn-main" onclick="copyPathToClipboard('/media/<?= $currentFile ?>')"><i class="fa-solid fa-link"></i> Copiar Ruta</button><form method="post" style="display:inline;" onsubmit="return confirm('¿Borrar definitivamente?');"><input type="hidden" name="action" value="delete_image"><input type="hidden" name="file" value="<?= htmlspecialchars($currentFile) ?>"><input type="hidden" name="redirect_folder" value="<?= htmlspecialchars($currentFolder) ?>"><button class="btn-main" style="background:#ef4444;"><i class="fa-solid fa-trash-can"></i> Borrar</button></form></div></div>
+                    <div style="text-align:center; background:white; padding:20px; border-radius:8px; border:1px solid #e2e8f0;"><img src="<?=$route;?>media/<?= $currentFile ?>" style="max-height:60vh; max-width:100%;"><div style="margin-top:15px; display:flex; justify-content:center; gap:10px;"><button id="btnCopyPath" class="btn-main" onclick="copyPathToClipboard('/media/<?= $currentFile ?>')"><i class="fa-solid fa-link"></i> Copiar Ruta</button><form method="post" style="display:inline;" onsubmit="return confirm('¿Borrar definitivamente?');"><input type="hidden" name="action" value="delete_image"><input type="hidden" name="file" value="<?= htmlspecialchars($currentFile) ?>"><input type="hidden" name="redirect_folder" value="<?= htmlspecialchars($currentFolder) ?>"><button class="btn-main" style="background:#ef4444;"><i class="fa-solid fa-trash-can"></i> Borrar</button></form></div></div>
                 <?php else: ?>
                     <div class="media-grid">
                         <form id="mediaUploadForm" action="?tab=media&folder=<?= urlencode($currentFolder) ?>" method="post" enctype="multipart/form-data" class="media-card upload-card" onclick="document.getElementById('fileInput').click()">
@@ -402,7 +402,7 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
                             <input type="file" name="file" id="fileInput" style="display:none" onchange="showLoading('sidebar'); this.form.submit()">
                             <i class="fa-solid fa-cloud-arrow-up fa-3x"></i>
                         </form>
-                        <?php foreach(Core\Helpers::getImagesInDir($mediaDir.($currentFolder?'/'.$currentFolder:''),$currentFolder) as $i): ?><div class="media-card"><a href="?tab=media&file=<?= urlencode($i['path']) ?>"><img src="media/<?= $i['path'] ?>" loading="lazy"></a></div><?php endforeach; ?>
+                        <?php foreach(Core\Helpers::getImagesInDir($mediaDir.($currentFolder?'/'.$currentFolder:''),$currentFolder) as $i): ?><div class="media-card"><a href="?tab=media&file=<?= urlencode($i['path']) ?>"><img src="<?=$route;?>media/<?= $i['path'] ?>" loading="lazy"></a></div><?php endforeach; ?>
                     </div>
                 <?php endif; ?>
             </div>
@@ -493,7 +493,7 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
         showLoading('sidebar'); 
         const formData = new FormData(); formData.append('action', 'run_indexer');
         try { 
-            const response = await fetch('admin.php', { method: 'POST', body: formData }); 
+            const response = await fetch(window.location.pathname, { method: 'POST', body: formData });
             if (response.ok) { btn.innerHTML = '✅ Actualizado'; setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 1500); }
             else { btn.innerHTML = '❌ Error'; setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 1500); }
         } catch (e) { btn.innerHTML = '❌ Error'; setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 1500); } 
