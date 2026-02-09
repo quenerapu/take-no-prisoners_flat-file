@@ -41,6 +41,23 @@ class Search
         return $results;
     }
 
+    private function buildUrl($slug)
+    {
+        $validLangs = array_keys($this->config['languages'] ?? []);
+        $isMultiLang = count($validLangs) > 1;
+        $cleanSlug = ltrim($slug, '/');
+
+        if ($isMultiLang) {
+            return $this->config['base_url'] . '/' . $cleanSlug;
+        } else {
+            $prefix = $this->lang . '/';
+            if (strpos($cleanSlug, $prefix) === 0) {
+                $cleanSlug = substr($cleanSlug, strlen($prefix));
+            }
+            return $this->config['base_url'] . '/' . $cleanSlug;
+        }
+    }
+
     /**
      * Busca dentro de un archivo JSON pre-generado.
      */
@@ -57,7 +74,7 @@ class Search
                 
                 $found[] = [
                     'title'   => $item['title'],
-                    'url'     => $this->config['base_url'] . '/' . ltrim($item['slug'], '/'),
+                    'url'     => $this->buildUrl($item['slug']),
                     'excerpt' => $item['description'] ?? '',
                     'source'  => 'index'
                 ];
@@ -108,12 +125,11 @@ class Search
                         $description = trim($descMatches[1]);
                     }
 
-                    $relativePath = str_replace([$baseDir, '.md', '\\'], ['', '', '/'], $filepath);
-                    $url = $this->config['base_url'] . '/' . ltrim($relativePath, '/');
+                    $slug = str_replace([$baseDir, '.md', '\\'], ['', '', '/'], $filepath);
 
                     $found[] = [
                         'title'   => $title,
-                        'url'     => $url,
+                        'url'     => $this->buildUrl($slug),
                         'excerpt' => $description,
                         'source'  => 'file'
                     ];
