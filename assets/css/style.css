@@ -143,12 +143,13 @@ a {
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
   transition: all 0.2s;
+  font-weight: bold;
   &:hover { text-decoration-thickness: 2px; color: var(--accent-hover); }
 }
 
 /* --- LISTAS --- */
 ul, ol { margin-bottom: 1.5rem; padding-left: 1.5rem; }
-li { margin-bottom: 0.5rem; padding-left: 0.5rem; }
+/* li { margin-bottom: 0.5rem; padding-left: 0.5rem; } */
 
 /* Listas anidadas */
 ul ul, ol ol, ul ol, ol ul { margin-bottom: 0; }
