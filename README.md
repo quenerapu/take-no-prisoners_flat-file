@@ -27,11 +27,13 @@ Para que **Take No Prisoners Flat-File** funcione correctamente, asegúrate de m
 
 ```
 .
+├── admin/               # Archivo para administrar contenidos (admin | 1234)
+├── assets/              # Recursos estáticos (CSS, JS, imágenes)
 ├── core/                # Núcleo: Content, Search, Helpers, Request, Indexer
 ├── content/             # Archivos .md (organizados por /es y /en)
 ├── includes/            # Plantillas (header/footer/search) y librerías (Parsedown)
+├── media/               # Imágenes para las publicaciones
 ├── snippets/            # Fragmentos de código reutilizables
-├── assets/              # Recursos estáticos (CSS, JS, imágenes)
 ├── index.php            # Punto de entrada único
 ├── config.php           # Configuración del sitio
 ├── .htaccess            # Reglas de Apache
