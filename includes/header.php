@@ -43,7 +43,7 @@
       <a href="<?= $config['base_url'] ?>/" class="site-title"><?= htmlspecialchars($config['name'] ?? 'Wiki') ?></a>
       
       <form action="<?= $config['base_url'] ?>/<?= ($currentLang !== 'es') ? $currentLang . '/' : '' ?>search" method="get" class="search-form">
-          <input type="text" name="q" placeholder="Buscar..." value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '' ?>"required>
+          <input type="text" name="q" placeholder="Buscar..." value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '' ?>" required>
       </form>
     </div>
   </header>

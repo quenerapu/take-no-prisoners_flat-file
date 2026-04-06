@@ -190,8 +190,8 @@ pre {
   border-radius: var(--radius);
   overflow-x: auto;
   margin: 2rem 0;
-  font-size: 0.9rem;
   font-family: var(--font-mono);
+  border-radius: 8px !important;
 }
 
 code {
@@ -199,10 +199,11 @@ code {
   color: #be185d; /* Un color rosado para destacar código inline */
   padding: 0.2em 0.4em;
   border-radius: 4px;
-  font-size: 0.85em;
+  font-size: 1.1rem !important;
   font-family: var(--font-mono);
 }
-pre code { background: transparent; color: inherit; padding: 0; }
+
+pre code { background: transparent; color: inherit; font-size: .9rem !important; line-height: .5 !important; padding: 0; }
 
 hr {
   border: 0;

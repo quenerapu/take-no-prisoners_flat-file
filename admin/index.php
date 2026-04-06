@@ -349,6 +349,7 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
         .symbol-item:hover { background: #f1f5f9; color: #2563eb; }
         .cm-header-1 { font-size: 1.4rem !important; color: #2563eb !important; }
         .cm-header-2 { font-size: 1.2rem !important; color: #2563eb !important; }
+        .cm-header-3,.cm-header-4,.cm-header-5,.cm-header-6 { font-size: 1.1rem !important; color: #666 !important; }
         .cm-s-easymde .cm-comment { background: #f8fafc !important; color: #64748b !important; }
         .editor-empty-placeholder { position: absolute; top: 60px; left: 20px; font-size: 3rem; color: #e2e8f0; font-weight: 700; pointer-events: none; display: none; z-index: 10; }
         .is-editor-empty .editor-empty-placeholder { display: block; }
