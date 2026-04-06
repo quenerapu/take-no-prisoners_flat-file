@@ -1,6 +1,6 @@
 <?php
 // -----------------------------------------------------------------------------
-// CMS FRONT CONTROLLER (V5.2)
+// CMS FRONT CONTROLLER (V5.3) - Optimized Language & Assets
 // -----------------------------------------------------------------------------
 
 ini_set('display_errors', 1);
@@ -35,15 +35,22 @@ $config['base_url'] = (isset($_SERVER['HTTPS'])?'https':'http')."://$_SERVER[HTT
 $requestRaw = urldecode(trim(str_replace($basePath, '', $_SERVER['REQUEST_URI']), '/'));
 $slug = str_replace(['..', '.php'], '', explode('?', $requestRaw)[0]);
 
-// DETECCIÓN DE IDIOMA
+// DETECCIÓN DE IDIOMA MEJORADA
 $validLangs = array_keys($config['languages'] ?? ['es' => []]);
-$currentLang = $validLangs[0]; 
+$currentLang = $validLangs[0];
 
-if (count($validLangs) > 1) {
-    $parts = explode('/', $requestRaw, 2);
-    if (in_array($parts[0], $validLangs)) {
-        $currentLang = $parts[0];
-        $slug = isset($parts[1]) ? explode('?', $parts[1])[0] : '';
+// 1. Intentar detectar por URL
+$parts = explode('/', $requestRaw, 2);
+if (in_array($parts[0], $validLangs)) {
+    $currentLang = $parts[0];
+    $slug = isset($parts[1]) ? explode('?', $parts[1])[0] : '';
+} 
+// 2. Si es la raíz, intentar detectar por navegador
+elseif (empty($requestRaw) && isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+    $browserLang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+    if (in_array($browserLang, $validLangs) && $browserLang !== $currentLang) {
+        header("Location: " . $config['base_url'] . "/" . $browserLang . "/", true, 302);
+        exit;
     }
 }
 
@@ -74,19 +81,14 @@ else {
     $currentContentDir = "content/$currentLang/";
     $tryFile = $currentContentDir . $filename . ".md";
 
-    // LÓGICA DE CARPETA ÍNDICE (Corregida para evitar bucles)
+    // LÓGICA DE CARPETA ÍNDICE
     $potentialDir = $currentContentDir . $filename;
     if (!empty($slug) && is_dir($potentialDir)) {
-        
-        // Obtenemos el path real de la URL para comparar la barra final
         $uriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        
-        // Si la URL no termina en barra, redirigimos una sola vez
         if (substr($uriPath, -1) !== '/') {
             header("Location: " . $config['base_url'] . "/" . trim($requestRaw, '/') . "/", true, 301);
             exit;
         }
-
         $folderHome = $potentialDir . "/home.md";
         if (file_exists($folderHome)) {
             $tryFile = $folderHome;
@@ -100,8 +102,8 @@ else {
             
             $htmlContent = $engine->html;
             $meta = $engine->meta;
-            $accumulatedHeader = $engine->header;
-            $accumulatedFooter = $engine->footer;
+            $accumulatedHeader = $engine->header; // Ahora recibe datos reales
+            $accumulatedFooter = $engine->footer; // Ahora recibe datos reales
         } else {
             $htmlContent = nl2br(htmlspecialchars(file_get_contents($tryFile)));
         }
@@ -122,13 +124,9 @@ else {
     if (isset($meta['draft'])) {
         $draftValue = strtolower(trim($meta['draft']));
         $draftToken = class_exists('Core\Request') ? Core\Request::get('draft', '') : '';
-
-        if (in_array($draftValue, ['true', '1', 'yes', ''])) {
-            $isAuthorized = false;
-        } 
-        else {
-            $isAuthorized = ($draftValue === strtolower($draftToken));
-        }
+        $isAuthorized = ($draftValue !== 'true' && $draftValue !== '1' && $draftValue !== 'yes' && $draftValue !== '') 
+                        ? ($draftValue === strtolower($draftToken)) 
+                        : false;
 
         if (!$isAuthorized) {
             http_response_code(404);

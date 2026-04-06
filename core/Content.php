@@ -17,7 +17,7 @@ class Content
 
     /**
      * @param string $rawContent El contenido Markdown crudo (de archivo)
-     * @param null $unused_pdo   Parámetro eliminado (mantenido null por compatibilidad si fuera necesario)
+     * @param null $unused_pdo   Parámetro eliminado (mantenido null por compatibilidad)
      * @param array $config      Configuración del sitio
      * @param string $lang       Código de idioma actual
      */
@@ -40,10 +40,13 @@ class Content
             $body = $this->raw;
         }
 
-        // 2. Procesar Snippets ({{archivo.php}}) - SOLO FLAT-FILE
+        // 2. Procesar Snippets ({{archivo.php}})
         $body = $this->processSnippets($body);
 
-        // 3. Sustituir variables mágicas
+        // 3. Extraer componentes dinámicos <x-header> y <x-footer>
+        $body = $this->extractAssets($body);
+
+        // 4. Sustituir variables mágicas
         $body = str_replace('§TITLE', $this->meta['title'] ?? '', $body);
         
         if (isset($this->meta['date'])) {
@@ -53,7 +56,7 @@ class Content
             $body = str_replace('§DATE', $formattedDate, $body);
         }
 
-        // 4. Convertir Markdown a HTML
+        // 5. Convertir Markdown a HTML
         $pd = new \ExtensionParsedown();
         $this->html = $pd->text($body);
     }
@@ -69,6 +72,26 @@ class Content
         }
     }
 
+    /**
+     * Extrae el contenido de <x-header> y <x-footer> y lo limpia del cuerpo
+     */
+    private function extractAssets($text)
+    {
+        // Capturar <x-header>...</x-header>
+        $text = preg_replace_callback('/<x-header>(.*?)<\/x-header>/is', function($m) {
+            $this->header .= "\n" . trim($m[1]);
+            return ''; 
+        }, $text);
+
+        // Capturar <x-footer>...</x-footer>
+        $text = preg_replace_callback('/<x-footer>(.*?)<\/x-footer>/is', function($m) {
+            $this->footer .= "\n" . trim($m[1]);
+            return ''; 
+        }, $text);
+
+        return $text;
+    }
+
     private function processSnippets($text)
     {
         $depth = 0;
@@ -79,7 +102,6 @@ class Content
                 $name = trim($matches[1]);
                 $snippetsDir = __DIR__ . '/../snippets/';
                 
-                // Candidatos a archivos físicos
                 $candidates = [
                     $snippetsDir . $name,
                     $snippetsDir . $name . '.php',
@@ -105,8 +127,6 @@ class Content
                         return $content;
                     }
                 }
-
-                // Si no existe el archivo, no hay fallback a BD.
                 return "";
 
             }, $text);

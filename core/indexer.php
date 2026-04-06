@@ -1,6 +1,6 @@
 <?php
 /**
- * GENERADOR DE ÍNDICE DE BÚSQUEDA
+ * GENERADOR DE ÍNDICE DE BÚSQUEDA (Refactorizado)
  * Ejecución: indexer.php?token=TU_TOKEN_SECRETO
  */
 
@@ -14,12 +14,8 @@ if ($providedToken !== $secretToken) {
     die("<h1>Acceso denegado</h1><p>Token de seguridad inválido.</p>");
 }
 
-// 2. CARGA DE LIBRERÍAS Y RUTAS
-$libPath = dirname(__DIR__) . '/includes/libs/ExtensionParsedown.php';
-if (!file_exists($libPath)) {
-    die("Error: No se encuentra ExtensionParsedown.php en $libPath");
-}
-require_once $libPath;
+// 2. CARGA DE DEPENDENCIAS DEL NÚCLEO
+require_once __DIR__ . '/Content.php';
 
 $contentDir = realpath(__DIR__ . '/../content');
 $indexFile = $contentDir . '/search_index.json';
@@ -30,7 +26,6 @@ if (!$contentDir || !is_dir($contentDir)) {
 
 $searchIndex = [];
 $languages = array_keys($config['languages'] ?? ['es' => []]);
-$pd = new \ExtensionParsedown();
 
 // 3. PROCESAMIENTO DE ARCHIVOS POR IDIOMA
 foreach ($languages as $lang) {
@@ -47,77 +42,41 @@ foreach ($languages as $lang) {
             if ($file->getBasename('.md') === '404') continue;
 
             $rawContent = file_get_contents($file->getPathname());
-            $meta = [];
-            $markdownBody = $rawContent;
+            
+            // Utilizamos el motor oficial del CMS para procesar el contenido
+            // Esto resuelve automáticamente Front Matter, Snippets y limpieza de <x-header/footer>
+            $engine = new Core\Content($rawContent, null, $config, $lang);
 
-            // A. Extraer Front Matter
-            if (preg_match('/^---[\r\n]+(.*?)[\r\n]+---[\r\n]+(.*)/s', $rawContent, $matches)) {
-                $metaText = $matches[1];
-                $markdownBody = $matches[2];
-                foreach (explode("\n", $metaText) as $line) {
-                    if (strpos($line, ':') !== false) {
-                        list($k, $v) = explode(':', $line, 2);
-                        $meta[strtolower(trim($k))] = trim($v);
-                    }
-                }
-            }
-
-            // B. Validar si es un borrador (Draft)
-            if (isset($meta['draft'])) {
-                $draftValue = strtolower(trim($meta['draft']));
+            // A. Validar si es un borrador (Draft) para no indexarlo
+            if (isset($engine->meta['draft'])) {
+                $draftValue = strtolower(trim($engine->meta['draft']));
                 if (in_array($draftValue, ['true', '1', 'yes', ''])) {
                     continue; 
                 }
             }
 
-            // C. Sustituir Variables Mágicas (§TITLE, §DATE, §LANG)
-            $title = $meta['title'] ?? $file->getBasename('.md');
-            $processedBody = str_replace(['§TITLE', '§LANG'], [$title, $lang], $markdownBody);
-            
-            if (isset($meta['date'])) {
-                $dateFn = $config['languages'][$lang]['date'] ?? null;
-                $ts = strtotime($meta['date']);
-                $formattedDate = ($dateFn && is_callable($dateFn)) ? $dateFn($ts) : $meta['date'];
-                $processedBody = str_replace('§DATE', $formattedDate, $processedBody);
-            }
-
-            // D. Procesamiento de Snippets ({{archivo.php}})
-            $processedBody = preg_replace_callback('/\{\{(.*?)\}\}/', function($m) {
-                $sDir = __DIR__ . '/../snippets/';
-                $path = $sDir . trim($m[1]);
-                if (!strpos($path, '.')) $path .= '.php'; 
-                
-                if (file_exists($path)) {
-                    $ext = pathinfo($path, PATHINFO_EXTENSION);
-                    if ($ext === 'php') {
-                        ob_start(); include $path; return ob_get_clean();
-                    }
-                    return file_get_contents($path);
-                }
-                return "";
-            }, $processedBody);
-
-            // E. Renderizado y LIMPIEZA PROFUNDA DE CÓDIGO (CSS/JS)
-            $html = $pd->text($processedBody);
-
-            // 1. Eliminar bloques de <style> y <script> con su contenido interno
-            $cleanHtml = preg_replace('/<(style|script)\b[^>]*>.*?<\/\1>/is', '', $html);
-
-            // 2. Eliminar etiquetas de componentes personalizados
-            $cleanHtml = preg_replace('/<\/?x-(header|footer)[^>]*>/i', '', $cleanHtml);
-
-            // 3. Limpiar etiquetas HTML restantes y normalizar espacios
+            // B. Limpieza profunda del HTML generado para el índice de texto
+            // Eliminamos scripts o estilos que hayan podido quedar fuera de las etiquetas de componente
+            $cleanHtml = preg_replace('/<(style|script)\b[^>]*>.*?<\/\1>/is', '', $engine->html);
             $cleanText = strip_tags($cleanHtml);
             $cleanText = preg_replace('/\s+/', ' ', $cleanText);
             $cleanText = trim($cleanText);
 
-            // F. Generar el Slug relativo
+            // C. Generar el Slug relativo
             $slug = str_replace([$contentDir, '.md', '\\'], ['', '', '/'], $file->getPathname());
+            $slug = ltrim($slug, '/');
             
+            // Quitar el prefijo de idioma del slug si ya está implícito en la estructura
+            $slugParts = explode('/', $slug);
+            if ($slugParts[0] === $lang) {
+                array_shift($slugParts);
+                $slug = implode('/', $slugParts);
+            }
+
             $searchIndex[$lang][] = [
-                'slug'        => ltrim($slug, '/'),
-                'title'       => $title,
-                'description' => $meta['description'] ?? '',
+                'slug'        => $slug,
+                'title'       => $engine->meta['title'] ?? $file->getBasename('.md'),
+                'description' => $engine->meta['description'] ?? '',
                 'content'     => mb_substr($cleanText, 0, 5000, 'UTF-8') 
             ];
         }
@@ -133,8 +92,8 @@ if (!is_writable($contentDir)) {
 $jsonOutput = json_encode($searchIndex, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 if (file_put_contents($indexFile, $jsonOutput)) {
-    echo "<h1>✅ Índice actualizado y limpio</h1>";
-    echo "<p>Contenido técnico (CSS/JS) filtrado de la búsqueda.</p>";
+    echo "<h1>✅ Índice actualizado</h1>";
+    echo "<p>El índice se ha generado utilizando el motor Core\Content de forma coherente.</p>";
 } else {
-    echo "<h1>❌ Error Crítico</h1>";
+    echo "<h1>❌ Error Crítico al guardar el índice</h1>";
 }
