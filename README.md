@@ -1,6 +1,8 @@
 # 🍃 Take No Prisoners Flat-File v1.0
 
-**Take No Prisoners Flat-File** es un sistema de gestión de contenidos (CMS) moderno y minimalista, **concebido para operar íntegramente sin bases de datos**. Al utilizar el sistema de archivos como motor principal, ofrece una velocidad de respuesta excepcional y una portabilidad total: basta con copiar la carpeta en cualquier servidor PHP para que el sitio cobre vida. Intencionadamente **Take No Prisoners Flat-File** carece de panel de administración, por lo que se espera que el usuario suba los archivos a través de git, sftp o el sistema que sea.
+**Take No Prisoners Flat-File** es un sistema de gestión de contenidos (CMS) moderno y minimalista, **concebido para operar íntegramente sin bases de datos**. Al utilizar el sistema de archivos como motor principal, ofrece una velocidad de respuesta excepcional y una portabilidad total: basta con copiar la carpeta en cualquier servidor PHP para que el sitio cobre vida.
+
+**Take No Prisoners Flat-File** tiene un panel de administración pensado para ser usado en una instalación local, o en producción *at-your-won-risk*. El plan óptimo es usar admin/ en local y actualizar la carpeta content/ remota a través de git, sftp o sistema similar.
 
 ## ✨ Funcionalidades clave
 
@@ -81,13 +83,9 @@ Si estás ejecutando localmente **Take No Prisoners Flat-File** en Docker es pos
 
 **Take No Prisoners Flat-File** incluye una capa de limpieza de datos en todas las peticiones y protege las vistas previas de borradores mediante tokens específicos definidos en el front matter de cada archivo.
 
-## 👀 Coming soon
+## Panel de administración
 
-- Take No Prisoners Flat-File With Admin Panel v1.0
-- Take No Prisoners Flat-File + Database With Admin Panel v1.0
-- Take No Prisoners Flat-File + Database With Admin Panel Multitenant v1.0
-- Take No Prisoners Database-Only With Admin Panel v1.0
-- Take No Prisoners Database-Only With Admin Panel Multitenant v1.0
+Puedes usar el directorio admin/ que usa un archivo .htpasswd para solicitar unas credenciales de acceso o renombrar el index.php dentro de admin/ como admin.php (o el nombre que quieras) y llevarlo al primer nivel. A mí, para trabajar en local, me resulta más cómodo el segundo sistema.
 
 ## 🤟 Agradecimientos
 
