@@ -1,6 +1,6 @@
 <?php
 // -----------------------------------------------------------------------------
-// CMS FRONT CONTROLLER (V5.3) - Optimized Language & Assets
+// CMS FRONT CONTROLLER (V5.5) - Precise Admin Edit Link
 // -----------------------------------------------------------------------------
 
 ini_set('display_errors', 1);
@@ -27,7 +27,6 @@ foreach ($dependencies as $file) {
 // INICIALIZACIÓN Y RUTAS
 // -----------------------------------------------------------------------------
 
-// CONFIGURACIÓN URL
 $basePath = dirname($_SERVER['SCRIPT_NAME']);
 if ($basePath === '/' || $basePath === '\\') $basePath = '';
 $config['base_url'] = (isset($_SERVER['HTTPS'])?'https':'http')."://$_SERVER[HTTP_HOST]".$basePath;
@@ -35,17 +34,14 @@ $config['base_url'] = (isset($_SERVER['HTTPS'])?'https':'http')."://$_SERVER[HTT
 $requestRaw = urldecode(trim(str_replace($basePath, '', $_SERVER['REQUEST_URI']), '/'));
 $slug = str_replace(['..', '.php'], '', explode('?', $requestRaw)[0]);
 
-// DETECCIÓN DE IDIOMA MEJORADA
 $validLangs = array_keys($config['languages'] ?? ['es' => []]);
 $currentLang = $validLangs[0];
 
-// 1. Intentar detectar por URL
 $parts = explode('/', $requestRaw, 2);
 if (in_array($parts[0], $validLangs)) {
     $currentLang = $parts[0];
     $slug = isset($parts[1]) ? explode('?', $parts[1])[0] : '';
 } 
-// 2. Si es la raíz, intentar detectar por navegador
 elseif (empty($requestRaw) && isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
     $browserLang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
     if (in_array($browserLang, $validLangs) && $browserLang !== $currentLang) {
@@ -64,6 +60,7 @@ $htmlContent = '';
 $meta = [];
 $accumulatedHeader = '';
 $accumulatedFooter = '';
+$resolvedFilePath = ''; // Para guardar la ruta exacta del archivo .md
 
 if ($slug === 'search') {
     ob_start();
@@ -81,7 +78,6 @@ else {
     $currentContentDir = "content/$currentLang/";
     $tryFile = $currentContentDir . $filename . ".md";
 
-    // LÓGICA DE CARPETA ÍNDICE
     $potentialDir = $currentContentDir . $filename;
     if (!empty($slug) && is_dir($potentialDir)) {
         $uriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -96,14 +92,15 @@ else {
     }
 
     if (file_exists($tryFile)) {
+        $resolvedFilePath = $tryFile; // Guardamos para el botón de edición
         if (class_exists('Core\Content')) {
             $rawContent = file_get_contents($tryFile);
             $engine = new Core\Content($rawContent, null, $config, $currentLang);
             
             $htmlContent = $engine->html;
             $meta = $engine->meta;
-            $accumulatedHeader = $engine->header; // Ahora recibe datos reales
-            $accumulatedFooter = $engine->footer; // Ahora recibe datos reales
+            $accumulatedHeader = $engine->header;
+            $accumulatedFooter = $engine->footer;
         } else {
             $htmlContent = nl2br(htmlspecialchars(file_get_contents($tryFile)));
         }
@@ -140,10 +137,27 @@ else {
                 $meta['title'] = "404 Not Found";
             }
             $accumulatedHeader = $accumulatedFooter = '';
+            $resolvedFilePath = '';
         } else {
             $htmlContent = '<div style="background:#fff3cd;padding:15px;border:1px solid #ffeeba;color:#856404;margin-bottom:20px;border-radius:4px;font-family:sans-serif;">👁️ <strong>Modo Previsualización:</strong> Estás viendo un borrador protegido.</div>' . $htmlContent;
         }
     }
+}
+
+// -----------------------------------------------------------------------------
+// LÓGICA DE BOTÓN DE EDICIÓN MEJORADA
+// -----------------------------------------------------------------------------
+$adminLink = '';
+$isAdminPresent = file_exists('admin.php') || is_dir('admin');
+
+if ($isAdminPresent && !empty($resolvedFilePath)) {
+    $adminScript = file_exists('admin.php') ? 'admin.php' : 'admin/';
+    
+    // Limpiamos el prefijo 'content/' de la ruta para que coincida con lo que espera el admin
+    $relativeFile = str_replace('content/', '', $resolvedFilePath);
+    
+    // Construimos la URL con los parámetros exactos solicitados
+    $adminLink = $config['base_url'] . '/' . $adminScript . '?tab=content&file=' . urlencode($relativeFile);
 }
 
 // -----------------------------------------------------------------------------
@@ -154,6 +168,14 @@ require 'includes/header.php';
 ?>
 
 <main class="main-content">
+    <?php if (!empty($adminLink)): ?>
+        <div class="admin-edit-bar" style="text-align: right; margin-bottom: 1rem;">
+            <a href="<?= $adminLink ?>" class="edit-link" style="font-size: 0.8rem; background: #eee; padding: 5px 10px; border-radius: 3px; text-decoration: none; color: #333; border: 1px solid #ccc;">
+                ✎ Edita esta página
+            </a>
+        </div>
+    <?php endif; ?>
+
     <article>
         <?= $htmlContent ?>
     </article>

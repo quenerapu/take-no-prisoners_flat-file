@@ -570,5 +570,38 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
         } 
     }
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toolbarSpan = document.querySelector('#editorToolbar span');
+    
+    if (toolbarSpan) {
+        const filePath = toolbarSpan.textContent.trim();
+        
+        if (filePath && filePath.endsWith('.md')) {
+            let slug = filePath.replace('.md', '');
+            
+            if (slug.endsWith('/home')) {
+                slug = slug.slice(0, -5);
+            } else if (slug === 'home') {
+                slug = '';
+            }
+
+            const baseUrl = '<?= rtrim($config['base_url'], '/') ?>/';
+            const finalUrl = baseUrl + slug + (slug ? '/' : '');
+
+            toolbarSpan.style.cursor = 'pointer';
+            toolbarSpan.style.textDecoration = 'underline';
+            toolbarSpan.style.color = '#2563eb';
+            toolbarSpan.title = 'Volver a la web: ' + finalUrl;
+            
+            toolbarSpan.addEventListener('click', function() {
+                window.location.href = finalUrl;
+            });
+        }
+    }
+});
+</script>
+
 </body>
 </html>
