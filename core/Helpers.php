@@ -21,11 +21,16 @@ class Helpers
      */
     public static function cleanEmptyFolders($dir, $root)
     {
-        if (!is_dir($dir) || $dir == $root) return;
-        
-        $files = array_diff(scandir($dir), ['.', '..']);
-        
-        if (empty($files)) {
+        if (!is_dir($dir) || $dir === $root) return;
+
+        foreach (array_diff(scandir($dir), ['.', '..']) as $item) {
+            $itemPath = $dir . DIRECTORY_SEPARATOR . $item;
+            if (is_dir($itemPath)) {
+                self::cleanEmptyFolders($itemPath, $root);
+            }
+        }
+
+        if (empty(array_diff(scandir($dir), ['.', '..']))) {
             rmdir($dir);
             self::cleanEmptyFolders(dirname($dir), $root);
         }

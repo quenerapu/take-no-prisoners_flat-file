@@ -1,10 +1,11 @@
 <?php
 // -----------------------------------------------------------------------------
-// CMS FRONT CONTROLLER (V5.5) - Precise Admin Edit Link
+// CMS FRONT CONTROLLER (V5.7) - Intelligent Create & Edit Logic
 // -----------------------------------------------------------------------------
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+$isLocal = str_starts_with($_SERVER['HTTP_HOST'] ?? '', 'localhost') || str_starts_with($_SERVER['HTTP_HOST'] ?? '', '127.');
+ini_set('display_errors', $isLocal ? 1 : 0);
+error_reporting($isLocal ? E_ALL : 0);
 
 // 1. CARGA DE CONFIGURACIÓN
 $config = require 'config.php';
@@ -60,7 +61,8 @@ $htmlContent = '';
 $meta = [];
 $accumulatedHeader = '';
 $accumulatedFooter = '';
-$resolvedFilePath = ''; // Para guardar la ruta exacta del archivo .md
+$resolvedFilePath = ''; 
+$is404 = false;
 
 if ($slug === 'search') {
     ob_start();
@@ -92,7 +94,7 @@ else {
     }
 
     if (file_exists($tryFile)) {
-        $resolvedFilePath = $tryFile; // Guardamos para el botón de edición
+        $resolvedFilePath = $tryFile;
         if (class_exists('Core\Content')) {
             $rawContent = file_get_contents($tryFile);
             $engine = new Core\Content($rawContent, null, $config, $currentLang);
@@ -105,6 +107,7 @@ else {
             $htmlContent = nl2br(htmlspecialchars(file_get_contents($tryFile)));
         }
     } else {
+        $is404 = true;
         http_response_code(404);
         $file404 = "content/$currentLang/404.md";
         if (file_exists($file404)) {
@@ -115,9 +118,9 @@ else {
             $htmlContent = "<h1>404 Not Found</h1>";
             $meta['title'] = "404 Not Found";
         }
+        $resolvedFilePath = $tryFile;
     }
 
-    // LÓGICA DE BORRADOR (DRAFT)
     if (isset($meta['draft'])) {
         $draftValue = strtolower(trim($meta['draft']));
         $draftToken = class_exists('Core\Request') ? Core\Request::get('draft', '') : '';
@@ -126,6 +129,7 @@ else {
                         : false;
 
         if (!$isAuthorized) {
+            $is404 = true;
             http_response_code(404);
             $file404 = "content/$currentLang/404.md";
             if (file_exists($file404)) {
@@ -137,7 +141,6 @@ else {
                 $meta['title'] = "404 Not Found";
             }
             $accumulatedHeader = $accumulatedFooter = '';
-            $resolvedFilePath = '';
         } else {
             $htmlContent = '<div style="background:#fff3cd;padding:15px;border:1px solid #ffeeba;color:#856404;margin-bottom:20px;border-radius:4px;font-family:sans-serif;">👁️ <strong>Modo Previsualización:</strong> Estás viendo un borrador protegido.</div>' . $htmlContent;
         }
@@ -145,18 +148,25 @@ else {
 }
 
 // -----------------------------------------------------------------------------
-// LÓGICA DE BOTÓN DE EDICIÓN MEJORADA
+// LÓGICA DE BOTÓN DE EDICIÓN / CREACIÓN
 // -----------------------------------------------------------------------------
 $adminLink = '';
+$adminLabel = '✎ Edita esta página';
 $isAdminPresent = file_exists('admin.php') || is_dir('admin');
 
 if ($isAdminPresent && !empty($resolvedFilePath)) {
     $adminScript = file_exists('admin.php') ? 'admin.php' : 'admin/';
-    
-    // Limpiamos el prefijo 'content/' de la ruta para que coincida con lo que espera el admin
     $relativeFile = str_replace('content/', '', $resolvedFilePath);
     
-    // Construimos la URL con los parámetros exactos solicitados
+    if ($is404) {
+        $adminLabel = '✚ Crear esta página';
+        
+        // REGLA DE CREACIÓN: Nivel raíz -> carpeta/home.md | Nivel interior -> carpeta/archivo.md
+        if (strpos(trim($slug, '/'), '/') === false && !empty($slug)) {
+            $relativeFile = str_replace('.md', '/home.md', $relativeFile);
+        }
+    }
+    
     $adminLink = $config['base_url'] . '/' . $adminScript . '?tab=content&file=' . urlencode($relativeFile);
 }
 
@@ -171,7 +181,7 @@ require 'includes/header.php';
     <?php if (!empty($adminLink)): ?>
         <div class="admin-edit-bar" style="text-align: right; margin-bottom: 1rem;">
             <a href="<?= $adminLink ?>" class="edit-link" style="font-size: 0.8rem; background: #eee; padding: 5px 10px; border-radius: 3px; text-decoration: none; color: #333; border: 1px solid #ccc;">
-                ✎ Edita esta página
+                <?= $adminLabel ?>
             </a>
         </div>
     <?php endif; ?>

@@ -174,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $destPath = $base . '/' . $destRelative;
         if (file_exists($srcPath) && !file_exists($destPath)) {
             if ($type === 'folder') recursiveCopy($srcPath, $destPath);
-            else { copy($srcPath, $destPath); $openFolder = trim(dirname($srcRelative), '.'); $openParam = $openFolder ? "&open=" . urlencode($openFolder) : ""; usleep(300000); header("Location: $self?tab=$activeTab&file=" . urlencode($destRelative) . $openParam); }
+            else { copy($srcPath, $destPath); $openFolder = trim(dirname($srcRelative), '.'); $openParam = $openFolder ? "&open=" . urlencode($openFolder) : ""; header("Location: $self?tab=$activeTab&file=" . urlencode($destRelative) . $openParam); }
             exit;
         }
     }
@@ -184,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $base = ($activeTab === 'snippets') ? $snippetsDir : $contentDir;
         $file = Core\Request::post('file'); $content = $_POST['content']; $path = $base.'/'.$file; 
         if (trim($content) === '') { if (file_exists($path)) { unlink($path); Core\Helpers::cleanEmptyFolders(dirname($path), $base); } header("Location: $self?tab=$activeTab"); }
-        else { file_put_contents($path, $content); usleep(400000); header("Location: $self?tab=$activeTab&file=".urlencode($file)); } exit; 
+        else { file_put_contents($path, $content); header("Location: $self?tab=$activeTab&file=".urlencode($file)); } exit; 
     }
 
     if ($action === 'move') {
@@ -192,22 +192,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $base = ($tab === 'media') ? $mediaDir : (($tab === 'snippets') ? $snippetsDir : $contentDir);
         $oldPath = $base . '/' . $src; $basename = basename($src); $newRelative = trim($dest . '/' . $basename, '/'); $newPath = $base . '/' . $newRelative;
         if ($dest && !is_dir($base . '/' . $dest)) mkdir($base . '/' . $dest, 0777, true);
-        if (file_exists($oldPath) && !file_exists($newPath)) { rename($oldPath, $newPath); Core\Helpers::cleanEmptyFolders(dirname($oldPath), $base); usleep(300000); }
+        if (file_exists($oldPath) && !file_exists($newPath)) { rename($oldPath, $newPath); Core\Helpers::cleanEmptyFolders(dirname($oldPath), $base); }
         $openParam = $dest ? "&open=" . urlencode($dest) : ""; $typeParam = is_dir($newPath) ? 'folder' : 'file';
         header("Location: $self?tab=$tab&$typeParam=" . urlencode($newRelative) . $openParam); exit;
     }
 
-    if ($action === 'rename') { 
+    if ($action === 'rename') {
         $activeTab = Core\Request::get('tab', 'content');
         $base = ($activeTab === 'snippets') ? $snippetsDir : $contentDir;
-        $old = Core\Request::post('old_path'); $src = $base.'/'.$old; 
-        $new = Core\Helpers::cleanFilename(Core\Request::post('new_name')); 
+        $old = Core\Request::post('old_path'); $src = $base.'/'.$old;
+        $new = Core\Helpers::cleanFilename(Core\Request::post('new_name'));
         if (Core\Request::post('item_type')==='file' && !preg_match('/\.(md|php|html|htm)$/', $new)) {
             $ext = pathinfo($old, PATHINFO_EXTENSION);
             $new .= '.' . $ext;
         }
-        $dst = dirname($src).'/'.$new; 
-        if (!file_exists($dst)) { rename($src,$dst); header("Location: $self?tab=$activeTab"); exit; } 
+        $dst = dirname($src).'/'.$new;
+        if (!file_exists($dst)) { rename($src,$dst); header("Location: $self?tab=$activeTab"); exit; }
+    }
+
+    if ($action === 'convert_to_folder') {
+        $srcRelative = Core\Request::post('src');
+        $srcPath = $contentDir . '/' . $srcRelative;
+        $basename = basename($srcRelative, '.md');
+        $parentDir = dirname($srcRelative);
+        $newRelative = ($parentDir !== '.' ? $parentDir . '/' : '') . $basename . '/home.md';
+        $newPath = $contentDir . '/' . $newRelative;
+        if (file_exists($srcPath) && is_file($srcPath) && $basename !== 'home' && $basename !== '404') {
+            $content = file_get_contents($srcPath);
+            mkdir(dirname($newPath), 0777, true);
+            file_put_contents($newPath, $content);
+            unlink($srcPath);
+            $openFolder = ($parentDir !== '.' ? $parentDir . '/' : '') . $basename;
+            header("Location: $self?tab=content&file=" . urlencode($newRelative) . "&open=" . urlencode($openFolder));
+            exit;
+        }
     }
 
     if ($action === 'upload_image' && !empty($_FILES['file'])) { 
@@ -237,9 +255,15 @@ $base = ($activeTab === 'snippets') ? $snippetsDir : $contentDir;
 
 if (($activeTab === 'content' || $activeTab === 'snippets') && $currentFile) {
     $filePath = $base . '/' . $currentFile;
-    if (file_exists($filePath) && is_file($filePath)) { 
-        $editorContent = file_get_contents($filePath); 
+    if (file_exists($filePath) && is_file($filePath)) {
+        $editorContent = file_get_contents($filePath);
         $fileLastModified = filemtime($filePath);
+    } elseif ($activeTab === 'content') {
+        if (!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0777, true);
+        $template = "---\n\nTitle: Nuevo\nDescription: \nDate: ".date('Y-m-d')."\nDraft: true\n\n---\n\n{{breadcrumb.php}}\n\n# §TITLE\n\n§DATE\n\n";
+        file_put_contents($filePath, $template);
+        header("Location: $self?tab=$activeTab&file=" . urlencode($currentFile));
+        exit;
     }
 }
 
@@ -281,6 +305,9 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
 
         echo '<li><div class="tree-row file-row '.($isActive?'active':'').'" draggable="true" ondragstart="handleDragStart(event, \''.htmlspecialchars($relativePath).'\')" onclick="handleFileRowClick(event, this)"><div class="row-left"><a href="?tab='.$type.'&file='.urlencode($relativePath).'" class="file-link '.($isActive?'active':'').'"><i class="'.$iconClass.' file-icon"></i> '.htmlspecialchars($file).'</a></div><div class="row-actions">'; 
         if($type!=='media'){
+            if ($type === 'content' && $ext === 'md' && $file !== 'home.md' && $file !== '404.md') {
+                echo '<button class="btn-icon" title="Convertir en carpeta" onclick="event.stopPropagation(); convertToFolder(\''.htmlspecialchars($relativePath).'\')"><i class="fa-solid fa-folder-tree"></i></button>';
+            }
             echo '<button class="btn-icon" title="Duplicar" onclick="event.stopPropagation(); duplicateItem(\''.htmlspecialchars($relativePath).'\', \'file\')"><i class="fa-regular fa-copy"></i></button>';
             echo '<button class="btn-icon" title="Renombrar" onclick="event.stopPropagation(); renameItem(\''.htmlspecialchars($relativePath).'\',\'file\')"><i class="fa-solid fa-pen"></i></button>';
         } echo '</div></div></li>'; 
@@ -416,6 +443,7 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
 <form method="post" id="renameForm"><input type="hidden" name="action" value="rename"><input type="hidden" name="old_path" id="rename_old_path"><input type="hidden" name="new_name" id="rename_new_name"><input type="hidden" name="item_type" id="rename_item_type"></form>
 <form method="post" id="duplicateForm"><input type="hidden" name="action" value="duplicate"><input type="hidden" name="src" id="dup_src"><input type="hidden" name="new_name" id="dup_new_name"><input type="hidden" name="item_type" id="dup_type"><input type="hidden" name="tab_context" value="<?= $activeTab ?>"></form>
 <form method="post" id="moveForm"><input type="hidden" name="action" value="move"><input type="hidden" name="type" id="move_type"><input type="hidden" name="src" id="move_src"><input type="hidden" name="dest_folder" id="move_dest"></form>
+<form method="post" id="convertToFolderForm"><input type="hidden" name="action" value="convert_to_folder"><input type="hidden" name="src" id="ctf_src"></form>
 
 <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
 <script>
@@ -551,6 +579,13 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
     }
     function createNewFolderMedia(b=''){ let n=prompt("Nombre nueva carpeta:"); if(n && n.trim() !== ""){ showLoading('sidebar'); document.getElementById('new_name_input_folder').value = b ? b+'/'+n : n; document.getElementById('createMediaFolderForm').submit(); } }
     function renameItem(p,t){ let o=p.split('/').pop().replace('.md',''); let n=prompt("Renombrar:",o); if(n&&n!==o){ showLoading('sidebar'); document.getElementById('rename_old_path').value=p; document.getElementById('rename_new_name').value=n; document.getElementById('rename_item_type').value=t; document.getElementById('renameForm').submit(); } }
+    function convertToFolder(p) {
+        const name = p.replace(/\.md$/, '').split('/').pop();
+        if (!confirm('¿Convertir "' + name + '.md" en carpeta?\nEl archivo pasará a ser "' + name + '/home.md".')) return;
+        showLoading('sidebar');
+        document.getElementById('ctf_src').value = p;
+        document.getElementById('convertToFolderForm').submit();
+    }
     function duplicateItem(p, t){ 
         let filename = p.split('/').pop();
         let lastDotIndex = filename.lastIndexOf('.');
