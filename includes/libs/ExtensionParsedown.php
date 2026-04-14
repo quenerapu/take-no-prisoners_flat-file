@@ -3,6 +3,16 @@ require_once 'Parsedown.php';
 
 class ExtensionParsedown extends Parsedown {
 
+    protected function blockTableComplete(array $Block)
+    {
+        $Block['element'] = [
+            'name' => 'div',
+            'attributes' => ['class' => 'table-wrapper'],
+            'element' => $Block['element'],
+        ];
+        return $Block;
+    }
+
     protected function inlineImage($Excerpt) {
         $Image = parent::inlineImage($Excerpt);
         if (!isset($Image)) { return null; }
