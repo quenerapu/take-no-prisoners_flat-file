@@ -14,9 +14,16 @@ class ExtensionParsedown extends Parsedown {
     }
 
     /**
-     * Bloques de filas con | SIN separador GFM → HTML directo con todos <td>.
-     * Bloques CON separador → se dejan intactos para que Parsedown los procese
-     * con su <thead>/<th> normal.
+     * Normaliza bloques de filas con | antes de pasarlos a Parsedown:
+     *
+     *   Caso A — separador en posición > 0 (tabla GFM normal con cabecera):
+     *            se deja intacto; Parsedown lo procesa con <thead>/<th>.
+     *
+     *   Caso B — separador en posición 0 (sin cabecera pero con alineación):
+     *            se genera HTML con <td> aplicando las alineaciones del separador.
+     *
+     *   Caso C — sin separador (sin cabecera ni alineación):
+     *            se genera HTML con <td> sin estilos de alineación.
      */
     private function convertSeparatorlessTables($text)
     {
@@ -37,32 +44,30 @@ class ExtensionParsedown extends Parsedown {
                     $j++;
                 }
 
-                // ¿Ya tiene fila separadora?
-                $hasSeparator = false;
-                foreach ($block as $bline) {
+                // Localizar la primera fila separadora dentro del bloque
+                $separatorIndex = -1;
+                foreach ($block as $k => $bline) {
                     if (preg_match('/^\|[\s\-:|]+\|?\s*$/', $bline)) {
-                        $hasSeparator = true;
+                        $separatorIndex = $k;
                         break;
                     }
                 }
 
-                if (!$hasSeparator && count($block) > 1) {
-                    // Generar HTML directamente — todas las filas con <td>
-                    $html = '<div class="table-wrapper"><table><tbody>';
+                if ($separatorIndex > 0) {
+                    // Caso A: tabla GFM con cabecera — Parsedown se encarga
                     foreach ($block as $bline) {
-                        $stripped = trim(trim($bline, '|'));
-                        // Mismo patrón de celda que usa Parsedown internamente
-                        preg_match_all('/(?:(\\\\[|])|[^|`]|`[^`]++`|`)++/', $stripped, $matches);
-                        $html .= '<tr>';
-                        foreach ($matches[0] as $cell) {
-                            $html .= '<td>' . $this->elements($this->lineElements(trim($cell))) . '</td>';
-                        }
-                        $html .= '</tr>';
+                        $result[] = $bline;
                     }
-                    $html .= '</tbody></table></div>';
-                    $result[] = $html;
+                } elseif ($separatorIndex === 0 && count($block) > 1) {
+                    // Caso B: separador primero, sin cabecera, con alineación
+                    $alignments = $this->parseSeparatorAlignments($block[0]);
+                    $dataRows   = array_slice($block, 1);
+                    $result[]   = $this->buildTableHtml($dataRows, $alignments);
+                } elseif ($separatorIndex === -1 && count($block) > 1) {
+                    // Caso C: sin separador, sin cabecera, sin alineación
+                    $result[] = $this->buildTableHtml($block, []);
                 } else {
-                    // Tabla con separador: Parsedown la procesa normalmente
+                    // Fila suelta o separador solo — pasar tal cual
                     foreach ($block as $bline) {
                         $result[] = $bline;
                     }
@@ -76,6 +81,50 @@ class ExtensionParsedown extends Parsedown {
         }
 
         return implode("\n", $result);
+    }
+
+    /** Extrae el array de alineaciones de una fila separadora. */
+    private function parseSeparatorAlignments($separatorLine)
+    {
+        $stripped = trim(trim($separatorLine, '|'));
+        $cells    = explode('|', $stripped);
+        $alignments = [];
+        foreach ($cells as $cell) {
+            $cell = trim($cell);
+            if ($cell === '') { continue; }
+            if ($cell[0] === ':' && substr($cell, -1) === ':') {
+                $alignments[] = 'center';
+            } elseif ($cell[0] === ':') {
+                $alignments[] = 'left';
+            } elseif (substr($cell, -1) === ':') {
+                $alignments[] = 'right';
+            } else {
+                $alignments[] = null;
+            }
+        }
+        return $alignments;
+    }
+
+    /** Construye el HTML completo de una tabla con <td> (sin cabecera). */
+    private function buildTableHtml(array $rows, array $alignments)
+    {
+        $html = '<div class="table-wrapper"><table><tbody>';
+        foreach ($rows as $row) {
+            $stripped = trim(trim($row, '|'));
+            preg_match_all('/(?:(\\\\[|])|[^|`]|`[^`]++`|`)++/', $stripped, $matches);
+            $html .= '<tr>';
+            foreach ($matches[0] as $k => $cell) {
+                $style = (isset($alignments[$k]) && $alignments[$k] !== null)
+                    ? ' style="text-align: ' . $alignments[$k] . ';"'
+                    : '';
+                $html .= '<td' . $style . '>'
+                       . $this->elements($this->lineElements(trim($cell)))
+                       . '</td>';
+            }
+            $html .= '</tr>';
+        }
+        $html .= '</tbody></table></div>';
+        return $html;
     }
 
     protected function blockTableComplete(array $Block)
