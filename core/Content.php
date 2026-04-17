@@ -21,11 +21,14 @@ class Content
      * @param array $config      Configuración del sitio
      * @param string $lang       Código de idioma actual
      */
-    public function __construct($rawContent, $unused_pdo = null, $config = [], $lang = 'es')
+    private $slug = '';
+
+    public function __construct($rawContent, $unused_pdo = null, $config = [], $lang = 'es', $slug = '')
     {
         $this->raw = $rawContent;
         $this->config = $config;
         $this->lang = $lang;
+        $this->slug = $slug;
 
         $this->process();
     }
@@ -58,6 +61,12 @@ class Content
 
         // 5. Convertir Markdown a HTML
         $pd = new \ExtensionParsedown();
+        $pd->setContentContext(
+            dirname(__DIR__) . '/content',
+            array_keys($this->config['languages'] ?? []),
+            $this->lang,
+            $this->slug
+        );
         $this->html = $pd->text($body);
     }
 

@@ -8,8 +8,8 @@
   --lines: #e2e8f0;
   
   /* Accent & Brand */
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
+  --accent: #16a34a;
+  --accent-hover: #15803d;
   --accent-text: #ffffff;
 
   /* Estados (Traídos de admin.php) */
@@ -145,6 +145,12 @@ a {
   transition: all 0.2s;
   font-weight: bold;
   &:hover { text-decoration-thickness: 2px; color: var(--accent-hover); }
+}
+
+a.link-missing {
+  color: #dc2626;
+  text-decoration-style: dashed;
+  &:hover { color: #b91c1c; }
 }
 
 /* --- LISTAS --- */

@@ -42,13 +42,31 @@ $parts = explode('/', $requestRaw, 2);
 if (in_array($parts[0], $validLangs)) {
     $currentLang = $parts[0];
     $slug = isset($parts[1]) ? explode('?', $parts[1])[0] : '';
-} 
+}
 elseif (empty($requestRaw) && isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
     $browserLang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
     if (in_array($browserLang, $validLangs) && $browserLang !== $currentLang) {
         header("Location: " . $config['base_url'] . "/" . $browserLang . "/", true, 302);
         exit;
     }
+}
+
+// Detectar y limpiar el prefijo ':' de los segmentos del slug.
+// ':pagina' indica que el enlace debe crear un directorio (pagina/home.md)
+// en lugar de un archivo plano (pagina.md).
+$wantsDirectory = false;
+$slugParts = explode('/', $slug);
+foreach ($slugParts as &$_seg) {
+    if ($_seg !== '' && $_seg[0] === ':') {
+        $_seg = substr($_seg, 1);
+        $wantsDirectory = true;
+    }
+}
+unset($_seg);
+$slug = implode('/', $slugParts);
+// Reconstruir requestRaw sin ':' para que los redirects de trailing-slash sean correctos
+if ($wantsDirectory) {
+    $requestRaw = $currentLang . ($slug !== '' ? '/' . $slug : '');
 }
 
 ob_start();
@@ -97,7 +115,7 @@ else {
         $resolvedFilePath = $tryFile;
         if (class_exists('Core\Content')) {
             $rawContent = file_get_contents($tryFile);
-            $engine = new Core\Content($rawContent, null, $config, $currentLang);
+            $engine = new Core\Content($rawContent, null, $config, $currentLang, $slug);
             
             $htmlContent = $engine->html;
             $meta = $engine->meta;
@@ -160,9 +178,9 @@ if ($isAdminPresent && !empty($resolvedFilePath)) {
     
     if ($is404) {
         $adminLabel = '✚ Crear esta página';
-        
-        // REGLA DE CREACIÓN: Nivel raíz -> carpeta/home.md | Nivel interior -> carpeta/archivo.md
-        if (strpos(trim($slug, '/'), '/') === false && !empty($slug)) {
+
+        // REGLA DE CREACIÓN: prefijo ':' → carpeta/home.md | sin prefijo → archivo.md plano
+        if ($wantsDirectory) {
             $relativeFile = str_replace('.md', '/home.md', $relativeFile);
         }
     }

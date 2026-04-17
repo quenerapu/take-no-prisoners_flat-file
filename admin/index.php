@@ -468,7 +468,13 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
     const editorConfig = { element: document.getElementById('mdEditor'), spellChecker: false, status: false, autosave: {enabled: true, uniqueId: autosaveId, delay: 1000} };
 
     if (isMarkdown) {
-        editorConfig.toolbar = ["bold", "italic", "heading", "|", "quote", "unordered-list", "link", "image", "|", { name: "symbol-trigger", action: (editor) => toggleSymbolPicker(editor), className: "fa-symbol-trigger", title: "Insertar símbolos" }, "|", "side-by-side", "fullscreen"];
+        const insertTable = (editor) => {
+            const table = "\n| Col 1 | Col 2 | Col 3 |\n|-------|-------|-------|\n|       |       |       |\n";
+            const cm = editor.codemirror;
+            cm.replaceRange(table, cm.getCursor());
+            cm.focus();
+        };
+        editorConfig.toolbar = ["bold", "italic", "heading", "|", "quote", "unordered-list", "link", "image", "|", { name: "insert-table", action: insertTable, className: "fa-solid fa-table", title: "Insertar tabla" }, { name: "symbol-trigger", action: (editor) => toggleSymbolPicker(editor), className: "fa-symbol-trigger", title: "Insertar símbolos" }, "|", "side-by-side", "fullscreen"];
     } else {
         editorConfig.toolbar = false;
         document.getElementById('editorWrapper').classList.add('mode-code');

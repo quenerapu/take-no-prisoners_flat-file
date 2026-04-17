@@ -3,6 +3,114 @@ require_once 'Parsedown.php';
 
 class ExtensionParsedown extends Parsedown {
 
+    private $contentDir   = null;
+    private $validLangs   = [];
+    private $currentLang  = null;
+    private $currentSlug  = '';
+
+    /**
+     * Proporciona el contexto necesario para detectar enlaces internos rotos.
+     * @param string $contentDir  Ruta absoluta a la carpeta content/
+     * @param array  $validLangs  Códigos de idioma válidos (ej. ['es','en'])
+     * @param string $currentLang Idioma activo de la petición actual
+     * @param string $currentSlug Slug de la página actual (sin prefijo de idioma)
+     */
+    public function setContentContext($contentDir, array $validLangs, $currentLang, $currentSlug = '')
+    {
+        $this->contentDir  = rtrim($contentDir, '/');
+        $this->validLangs  = $validLangs;
+        $this->currentLang = $currentLang;
+        $this->currentSlug = trim($currentSlug, '/');
+    }
+
+    protected function inlineLink($Excerpt)
+    {
+        $Link = parent::inlineLink($Excerpt);
+        if (!isset($Link)) { return null; }
+
+        $href = $Link['element']['attributes']['href'] ?? '';
+        if ($this->contentDir !== null && $this->isMissingInternalPage($href)) {
+            $existing = $Link['element']['attributes']['class'] ?? '';
+            $Link['element']['attributes']['class'] = trim($existing . ' link-missing');
+        }
+
+        return $Link;
+    }
+
+    private function isMissingInternalPage($href)
+    {
+        if (empty($href)) { return false; }
+
+        // Ignorar anclas puras y URLs con esquema (http, mailto, ftp…)
+        if ($href[0] === '#') { return false; }
+        if (preg_match('/^[a-zA-Z][a-zA-Z0-9+\-.]*:/', $href)) { return false; }
+
+        $path = parse_url($href, PHP_URL_PATH) ?? $href;
+        if (empty($path)) { return false; }
+
+        // Ignorar URLs con extensión (assets, PDFs, imágenes…)
+        if (pathinfo($path, PATHINFO_EXTENSION) !== '') { return false; }
+
+        // Normalizar: quitar barras y determinar idioma + slug
+        if ($path[0] === '/') {
+            $trimmed = trim($path, '/');
+            if (empty($trimmed)) { return false; } // raíz del sitio
+
+            $segments = explode('/', $trimmed);
+            if (in_array($segments[0], $this->validLangs)) {
+                $lang = $segments[0];
+                $slug = implode('/', array_slice($segments, 1));
+            } else {
+                $lang = $this->currentLang;
+                $slug = $trimmed;
+            }
+            // Quitar prefijo ':' de cada segmento (convención wiki)
+            $slug = implode('/', array_map(fn($s) => ltrim($s, ':'), explode('/', $slug)));
+        } else {
+            // URL relativa: en lugar de intentar adivinar si la página actual
+            // tiene trailing slash o no (heurística frágil), comprobamos ambas
+            // resoluciones posibles y damos verde si la página existe en cualquiera.
+            $lang    = $this->currentLang;
+            $relPath = trim($path, '/');
+            // Quitar prefijo ':' (convención wiki: ':pagina' crea pagina/home.md)
+            $relPath = ltrim($relPath, ':');
+
+            if (in_array($relPath, ['search', 'sitemap', 'sitemap.xml'])) { return false; }
+
+            // Resolución 1 — página actual actúa como directory (URL con trailing slash):
+            //   relativa se resuelve DENTRO de currentSlug/
+            $slug1 = trim($this->currentSlug . '/' . $relPath, '/');
+
+            // Resolución 2 — página actual actúa como flat (URL sin trailing slash):
+            //   relativa se resuelve en el directorio PADRE de currentSlug
+            $parentDir = dirname($this->currentSlug);
+            $slug2     = trim(($parentDir === '.' ? '' : $parentDir . '/') . $relPath, '/');
+
+            foreach (array_unique([$slug1, $slug2]) as $candidate) {
+                if (empty($candidate)) { continue; }
+                $candidate = str_replace('..', '', $candidate);
+                if (empty($candidate)) { continue; }
+                $base = $this->contentDir . '/' . $lang . '/' . $candidate;
+                if (file_exists($base . '.md') || file_exists($base . '/home.md')) {
+                    return false; // existe en al menos una resolución
+                }
+            }
+            return true; // no existe en ninguna resolución
+        }
+
+        if (empty($slug)) { return false; }
+
+        // Ignorar rutas virtuales del CMS
+        if (in_array($slug, ['search', 'sitemap', 'sitemap.xml'])) { return false; }
+
+        // Prevenir directory traversal
+        $slug = str_replace('..', '', $slug);
+        if (empty($slug)) { return false; }
+
+        $base = $this->contentDir . '/' . $lang . '/' . $slug;
+        return !file_exists($base . '.md') && !file_exists($base . '/home.md');
+    }
+
     function text($text)
     {
         // Inicializar DefinitionData para que lineElements() funcione

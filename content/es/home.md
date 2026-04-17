@@ -1,19 +1,16 @@
 ---
 
 Title: Hola mundo
-Description: La homepage más chula del mundo
+Description: La homepage más grande del planeta
 Date: 2026-01-23
 
 ---
 
 # §TITLE
 
+sdfsdf
+
 §DATE
 
-{{test1.php}}
+{{test.php}}
 
-Bla bla bla
-
-{{test2.html}}
-
-:)
