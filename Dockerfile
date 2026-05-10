@@ -28,8 +28,10 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Ajuste de usuario
-# RUN usermod -u 1000 www-data
+# Ajuste de usuario dinámico
+ARG HOST_UID=1000
+ARG HOST_GID=1000
+RUN usermod -u ${HOST_UID} www-data && groupmod -g ${HOST_GID} www-data
 
 # OJO, que exista .podman/vhost.conf
 COPY .podman/vhost.conf /etc/apache2/sites-available/000-default.conf

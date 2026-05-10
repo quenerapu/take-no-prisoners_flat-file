@@ -13,9 +13,9 @@ require_once $route . 'core/Request.php';
 require_once $route . 'core/Helpers.php';
 
 $appName    = $config['app_name'] ?? 'Grijander Local';
-$contentDir  = realpath(__DIR__ . '/' . $route . 'content');
-$mediaDir    = realpath(__DIR__ . '/' . $route . 'media');
-$snippetsDir = realpath(__DIR__ . '/' . $route . 'snippets');
+$contentDir  = realpath(__DIR__ . '/' . $route . 'content') ?: (__DIR__ . '/' . $route . 'content');
+$mediaDir    = realpath(__DIR__ . '/' . $route . 'media') ?: (__DIR__ . '/' . $route . 'media');
+$snippetsDir = realpath(__DIR__ . '/' . $route . 'snippets') ?: (__DIR__ . '/' . $route . 'snippets');
 $self       = basename($_SERVER['PHP_SELF']);
 
 if (!is_dir($snippetsDir)) mkdir($snippetsDir, 0777, true);

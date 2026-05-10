@@ -25,6 +25,7 @@ No hay suite de tests. No hay build step para assets.
 ## Arquitectura
 
 ```
+server.sh          # Disparador
 index.php          # Front controller — único punto de entrada
 config.php         # Configuración global (langs, metadata, cache)
 sitemap.php        # Generador XML sitemap
