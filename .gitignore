@@ -1,0 +1,7 @@
+.env
+.env-template
+admin/
+certs/*.pem
+certs/*-key.pem
+#content/search_index.json
+.bkp
