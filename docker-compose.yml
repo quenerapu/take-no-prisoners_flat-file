@@ -10,8 +10,8 @@ services:
     userns_mode: "keep-id"
     restart: unless-stopped
     ports:
-      - "8081:8080"  # HTTP
-      - "8444:8443"  # HTTPS
+      - "8081:8080"  # HTTP!
+      - "8444:8443"  # HTTPS!
     volumes:
       - ./:/var/www/html:Z
       - ./certs:/etc/apache2/certs:Z
