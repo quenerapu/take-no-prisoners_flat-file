@@ -1,7 +1,15 @@
 <footer>
       <div class="footer-inner">
           <p>&copy; <?= date('Y') ?> <?= htmlspecialchars($config['name'] ?? 'Wiki') ?></p>
-          <p><a href="./es">ES</a> | <a href="./en">EN</a></p>
+          <?php if (!empty($config['languages'])): ?>
+          <p><?php
+              $langLinks = [];
+              foreach (array_keys($config['languages']) as $l) {
+                  $langLinks[] = '<a href="' . $config['base_url'] . '/' . $l . '">' . strtoupper($l) . '</a>';
+              }
+              echo implode(' | ', $langLinks);
+          ?></p>
+          <?php endif; ?>
       </div>
   </footer>
 

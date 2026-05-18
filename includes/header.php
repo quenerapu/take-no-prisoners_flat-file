@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="<?= $currentLang ?? 'es' ?>">
+<html lang="<?= $currentLang !== '' ? $currentLang : ($config['lang'] ?? 'es') ?>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,7 +42,7 @@
     <div class="header-inner">
       <a href="<?= $config['base_url'] ?>/" class="site-title"><?= htmlspecialchars($config['name'] ?? 'Wiki') ?></a>
       
-      <form action="<?= $config['base_url'] ?>/<?= ($currentLang !== 'es') ? $currentLang . '/' : '' ?>search" method="get" class="search-form">
+      <form action="<?= $config['base_url'] ?>/<?= ($currentLang !== '') ? $currentLang . '/' : '' ?>search" method="get" class="search-form">
           <input type="text" name="q" placeholder="Buscar..." value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '' ?>" required>
       </form>
     </div>

@@ -416,6 +416,40 @@ curl "https://tu-dominio.com/core/indexer.php?token=NUEVO_TOKEN"
 
 ---
 
+## Modo monolingüe vs. multilingüe
+
+El CMS detecta el modo a partir del array `languages` en `config.php`:
+
+| `languages` | Modo | URLs | Contenido |
+|---|---|---|---|
+| Array con entradas | Multilingüe | `/es/pagina`, `/en/page` | `content/es/`, `content/en/` |
+| Array vacío `[]` | Monolingüe | `/pagina` | `content/` directamente |
+
+**Proyecto monolingüe:**
+
+```php
+// config.php
+'languages' => []
+```
+
+- Las URLs no llevan prefijo de idioma: `/about`, `/blog/post`.
+- El contenido vive directamente en `content/` sin subcarpetas por idioma.
+- El selector de idiomas desaparece del footer automáticamente.
+- El índice de búsqueda usa la clave interna `''` (string vacío).
+
+**Proyecto multilingüe (comportamiento por defecto):**
+
+```php
+// config.php
+'languages' => ['es' => [...], 'en' => [...]]
+```
+
+El primer idioma del array es el idioma por defecto (fallback cuando la URL no incluye prefijo de idioma).
+
+> **Migración monolingüe → multilingüe:** mover los archivos de `content/` a `content/{lang}/` y añadir las entradas al array `languages`. Git registra el historial, no se pierde nada.
+
+---
+
 ## `config.php` — referencia
 
 ```php
@@ -430,7 +464,7 @@ return [
     'twitter'     => '@tu-usuario',
     'default_img' => '/assets/default-share.jpg',
     'cache_enabled' => false,
-    'languages'   => [
+    'languages'   => [          // Vacío [] para modo monolingüe
         'es' => [
             'name' => 'Español',
             'date' => function($ts) {

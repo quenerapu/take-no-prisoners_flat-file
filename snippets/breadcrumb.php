@@ -24,15 +24,16 @@ $segments = array_values(array_filter(explode('/', trim($uri, '/'))));
 $links = [];
 
 // 5. Determinar la URL base del idioma
-$homeLabel = ($currentLang === 'en') ? 'Home' : 'Inicio';
+$langs = $config['languages'] ?? [];
+$homeLabel = (isset($langs[$currentLang]['name']) && stripos($langs[$currentLang]['name'], 'engl') !== false) ? 'Home' : 'Inicio';
 $langPrefix = '';
 
-if (!empty($segments) && in_array($segments[0], array_keys($config['languages'] ?? []))) {
+if (!empty($segments) && in_array($segments[0], array_keys($langs))) {
     $langPrefix = $segments[0];
     array_shift($segments);
 }
 
-$homeUrl = rtrim($baseUrl . $basePath, '/') . '/' . $langPrefix;
+$homeUrl = rtrim($baseUrl . $basePath, '/') . ($langPrefix !== '' ? '/' . $langPrefix : '');
 
 if (empty($segments)) {
     $links[] = '<span>' . $homeLabel . '</span>';
@@ -42,7 +43,7 @@ if (empty($segments)) {
 
 // 6. Construir bloques restantes leyendo los títulos de los archivos .md
 $pathAccumulator = '';
-$contentBaseDir = __DIR__ . '/../content/' . $currentLang . '/';
+$contentBaseDir = __DIR__ . '/../content/' . ($currentLang !== '' ? $currentLang . '/' : '');
 
 foreach ($segments as $index => $segment) {
     $pathAccumulator .= $segment . '/';

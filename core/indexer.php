@@ -25,60 +25,73 @@ if (!$contentDir || !is_dir($contentDir)) {
 }
 
 $searchIndex = [];
-$languages = array_keys($config['languages'] ?? ['es' => []]);
+$languages = array_keys($config['languages'] ?? []);
+$isMonolingual = empty($languages);
 
-// 3. PROCESAMIENTO DE ARCHIVOS POR IDIOMA
-foreach ($languages as $lang) {
-    $searchIndex[$lang] = [];
-    $langPath = $contentDir . DIRECTORY_SEPARATOR . $lang;
-
-    if (!is_dir($langPath)) continue;
-
-    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($langPath));
-
+// 3. PROCESAMIENTO DE ARCHIVOS
+if ($isMonolingual) {
+    // Modo monolingüe: contenido directamente en content/
+    $searchIndex[''] = [];
+    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($contentDir));
     foreach ($iterator as $file) {
-        if ($file->isFile() && $file->getExtension() === 'md') {
-            
-            if ($file->getBasename('.md') === '404') continue;
+        if (!$file->isFile() || $file->getExtension() !== 'md') continue;
+        if ($file->getBasename('.md') === '404') continue;
+        $rawContent = file_get_contents($file->getPathname());
+        $engine = new Core\Content($rawContent, null, $config, '');
+        if (isset($engine->meta['draft'])) {
+            $draftValue = strtolower(trim($engine->meta['draft']));
+            if (in_array($draftValue, ['true', '1', 'yes', ''])) continue;
+        }
+        $cleanHtml = preg_replace('/<(style|script)\b[^>]*>.*?<\/\1>/is', '', $engine->html);
+        $cleanText = trim(preg_replace('/\s+/', ' ', strip_tags($cleanHtml)));
+        $slug = ltrim(str_replace([$contentDir, '.md', '\\'], ['', '', '/'], $file->getPathname()), '/');
+        $searchIndex[''][] = [
+            'slug'        => $slug,
+            'title'       => $engine->meta['title'] ?? $file->getBasename('.md'),
+            'description' => $engine->meta['description'] ?? '',
+            'content'     => mb_substr($cleanText, 0, 5000, 'UTF-8')
+        ];
+    }
+} else {
+    // Modo multilingüe: contenido en content/{lang}/
+    foreach ($languages as $lang) {
+        $searchIndex[$lang] = [];
+        $langPath = $contentDir . DIRECTORY_SEPARATOR . $lang;
 
-            $rawContent = file_get_contents($file->getPathname());
-            
-            // Utilizamos el motor oficial del CMS para procesar el contenido
-            // Esto resuelve automáticamente Front Matter, Snippets y limpieza de <x-header/footer>
-            $engine = new Core\Content($rawContent, null, $config, $lang);
+        if (!is_dir($langPath)) continue;
 
-            // A. Validar si es un borrador (Draft) para no indexarlo
-            if (isset($engine->meta['draft'])) {
-                $draftValue = strtolower(trim($engine->meta['draft']));
-                if (in_array($draftValue, ['true', '1', 'yes', ''])) {
-                    continue; 
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($langPath));
+
+        foreach ($iterator as $file) {
+            if ($file->isFile() && $file->getExtension() === 'md') {
+
+                if ($file->getBasename('.md') === '404') continue;
+
+                $rawContent = file_get_contents($file->getPathname());
+                $engine = new Core\Content($rawContent, null, $config, $lang);
+
+                if (isset($engine->meta['draft'])) {
+                    $draftValue = strtolower(trim($engine->meta['draft']));
+                    if (in_array($draftValue, ['true', '1', 'yes', ''])) continue;
                 }
+
+                $cleanHtml = preg_replace('/<(style|script)\b[^>]*>.*?<\/\1>/is', '', $engine->html);
+                $cleanText = trim(preg_replace('/\s+/', ' ', strip_tags($cleanHtml)));
+
+                $slug = ltrim(str_replace([$contentDir, '.md', '\\'], ['', '', '/'], $file->getPathname()), '/');
+                $slugParts = explode('/', $slug);
+                if ($slugParts[0] === $lang) {
+                    array_shift($slugParts);
+                    $slug = implode('/', $slugParts);
+                }
+
+                $searchIndex[$lang][] = [
+                    'slug'        => $slug,
+                    'title'       => $engine->meta['title'] ?? $file->getBasename('.md'),
+                    'description' => $engine->meta['description'] ?? '',
+                    'content'     => mb_substr($cleanText, 0, 5000, 'UTF-8')
+                ];
             }
-
-            // B. Limpieza profunda del HTML generado para el índice de texto
-            // Eliminamos scripts o estilos que hayan podido quedar fuera de las etiquetas de componente
-            $cleanHtml = preg_replace('/<(style|script)\b[^>]*>.*?<\/\1>/is', '', $engine->html);
-            $cleanText = strip_tags($cleanHtml);
-            $cleanText = preg_replace('/\s+/', ' ', $cleanText);
-            $cleanText = trim($cleanText);
-
-            // C. Generar el Slug relativo
-            $slug = str_replace([$contentDir, '.md', '\\'], ['', '', '/'], $file->getPathname());
-            $slug = ltrim($slug, '/');
-            
-            // Quitar el prefijo de idioma del slug si ya está implícito en la estructura
-            $slugParts = explode('/', $slug);
-            if ($slugParts[0] === $lang) {
-                array_shift($slugParts);
-                $slug = implode('/', $slugParts);
-            }
-
-            $searchIndex[$lang][] = [
-                'slug'        => $slug,
-                'title'       => $engine->meta['title'] ?? $file->getBasename('.md'),
-                'description' => $engine->meta['description'] ?? '',
-                'content'     => mb_substr($cleanText, 0, 5000, 'UTF-8') 
-            ];
         }
     }
 }

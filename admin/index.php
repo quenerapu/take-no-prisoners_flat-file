@@ -41,21 +41,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
      */
     if ($action === 'run_indexer') {
         $searchIndex = [];
-        $languages = array_keys($config['languages'] ?? ['es' => []]);
+        $languages = array_keys($config['languages'] ?? []);
+        $isMonolingual = empty($languages);
         $libPath = __DIR__ . '/'.$route.'includes/libs/ExtensionParsedown.php';
-        
+
         if (!file_exists($libPath)) {
             header('Content-Type: application/json', true, 500);
             echo json_encode(['status' => 'error', 'message' => 'Librería Parsedown no encontrada']);
             exit;
         }
-        
+
         require_once $libPath;
         $pd = new \ExtensionParsedown();
 
-        foreach ($languages as $lang) {
+        $dirsToScan = $isMonolingual
+            ? ['' => $contentDir]
+            : array_combine($languages, array_map(fn($l) => $contentDir . DIRECTORY_SEPARATOR . $l, $languages));
+
+        foreach ($dirsToScan as $lang => $langPath) {
             $searchIndex[$lang] = [];
-            $langPath = $contentDir . DIRECTORY_SEPARATOR . $lang;
             if (!is_dir($langPath)) continue;
 
             $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($langPath));

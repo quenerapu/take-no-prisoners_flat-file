@@ -35,19 +35,22 @@ $config['base_url'] = (isset($_SERVER['HTTPS'])?'https':'http')."://$_SERVER[HTT
 $requestRaw = urldecode(trim(str_replace($basePath, '', $_SERVER['REQUEST_URI']), '/'));
 $slug = str_replace(['..', '.php'], '', explode('?', $requestRaw)[0]);
 
-$validLangs = array_keys($config['languages'] ?? ['es' => []]);
-$currentLang = $validLangs[0];
+$validLangs = array_keys($config['languages'] ?? []);
+$isMonolingual = empty($validLangs);
+$currentLang = $isMonolingual ? '' : $validLangs[0];
 
 $parts = explode('/', $requestRaw, 2);
-if (in_array($parts[0], $validLangs)) {
-    $currentLang = $parts[0];
-    $slug = isset($parts[1]) ? explode('?', $parts[1])[0] : '';
-}
-elseif (empty($requestRaw) && isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-    $browserLang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
-    if (in_array($browserLang, $validLangs) && $browserLang !== $currentLang) {
-        header("Location: " . $config['base_url'] . "/" . $browserLang . "/", true, 302);
-        exit;
+if (!$isMonolingual) {
+    if (in_array($parts[0], $validLangs)) {
+        $currentLang = $parts[0];
+        $slug = isset($parts[1]) ? explode('?', $parts[1])[0] : '';
+    }
+    elseif (empty($requestRaw) && isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+        $browserLang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+        if (in_array($browserLang, $validLangs) && $browserLang !== $currentLang) {
+            header("Location: " . $config['base_url'] . "/" . $browserLang . "/", true, 302);
+            exit;
+        }
     }
 }
 
@@ -95,7 +98,7 @@ if ($slug === 'search') {
 } 
 else {
     $filename = empty($slug) ? 'home' : $slug;
-    $currentContentDir = "content/$currentLang/";
+    $currentContentDir = $isMonolingual ? "content/" : "content/$currentLang/";
     $tryFile = $currentContentDir . $filename . ".md";
 
     $potentialDir = $currentContentDir . $filename;
@@ -127,7 +130,7 @@ else {
     } else {
         $is404 = true;
         http_response_code(404);
-        $file404 = "content/$currentLang/404.md";
+        $file404 = $isMonolingual ? "content/404.md" : "content/$currentLang/404.md";
         if (file_exists($file404)) {
             $engine = new Core\Content(file_get_contents($file404), null, $config, $currentLang);
             $htmlContent = $engine->html;
@@ -142,14 +145,14 @@ else {
     if (isset($meta['draft'])) {
         $draftValue = strtolower(trim($meta['draft']));
         $draftToken = class_exists('Core\Request') ? Core\Request::get('draft', '') : '';
-        $isAuthorized = ($draftValue !== 'true' && $draftValue !== '1' && $draftValue !== 'yes' && $draftValue !== '') 
-                        ? ($draftValue === strtolower($draftToken)) 
+        $isAuthorized = ($draftValue !== 'true' && $draftValue !== '1' && $draftValue !== 'yes' && $draftValue !== '')
+                        ? ($draftValue === strtolower($draftToken))
                         : false;
 
         if (!$isAuthorized) {
             $is404 = true;
             http_response_code(404);
-            $file404 = "content/$currentLang/404.md";
+            $file404 = $isMonolingual ? "content/404.md" : "content/$currentLang/404.md";
             if (file_exists($file404)) {
                 $engine = new Core\Content(file_get_contents($file404), null, $config, $currentLang);
                 $htmlContent = $engine->html;

@@ -86,11 +86,12 @@ class ExtensionParsedown extends Parsedown {
             $parentDir = dirname($this->currentSlug);
             $slug2     = trim(($parentDir === '.' ? '' : $parentDir . '/') . $relPath, '/');
 
+            $langPart = ($lang !== '') ? $lang . '/' : '';
             foreach (array_unique([$slug1, $slug2]) as $candidate) {
                 if (empty($candidate)) { continue; }
                 $candidate = str_replace('..', '', $candidate);
                 if (empty($candidate)) { continue; }
-                $base = $this->contentDir . '/' . $lang . '/' . $candidate;
+                $base = $this->contentDir . '/' . $langPart . $candidate;
                 if (file_exists($base . '.md') || file_exists($base . '/home.md')) {
                     return false; // existe en al menos una resolución
                 }
@@ -107,7 +108,8 @@ class ExtensionParsedown extends Parsedown {
         $slug = str_replace('..', '', $slug);
         if (empty($slug)) { return false; }
 
-        $base = $this->contentDir . '/' . $lang . '/' . $slug;
+        $langPart = ($lang !== '') ? $lang . '/' : '';
+        $base = $this->contentDir . '/' . $langPart . $slug;
         return !file_exists($base . '.md') && !file_exists($base . '/home.md');
     }
 
