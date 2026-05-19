@@ -165,6 +165,29 @@ dl { margin-bottom: 1.5rem; }
 dt { font-weight: 700; color: var(--headings); margin-top: 1rem; }
 dd { margin-left: 0; margin-bottom: 1rem; color: var(--text-light); }
 
+/* --- TASK LISTS --- */
+ul:has(li.task-item) {
+  list-style: none;
+  padding-left: 0.25rem;
+}
+li.task-item {
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+li.task-item input[type="checkbox"] {
+  flex-shrink: 0;
+  accent-color: var(--accent);
+  width: 1rem;
+  height: 1rem;
+  cursor: default;
+}
+li.task-item:has(input:checked) {
+  color: var(--text-light);
+  text-decoration: line-through;
+}
+
 /* --- RESULTADOS DE BÚSQUEDA --- */
 ul.search-results {
   list-style-type: none;
@@ -210,6 +233,32 @@ code {
 }
 
 pre code { background: transparent; color: inherit; font-size: .9rem !important; line-height: .5 !important; padding: 0; }
+
+/* --- PRISM TOOLBAR --- */
+div.code-toolbar > .toolbar {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  top: 0.5rem;
+  right: 0.6rem;
+}
+div.code-toolbar > .toolbar > .toolbar-item > a,
+div.code-toolbar > .toolbar > .toolbar-item > button,
+div.code-toolbar > .toolbar > .toolbar-item > span {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px;
+  box-shadow: none;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  transition: color 0.15s, background 0.15s;
+}
+div.code-toolbar > .toolbar > .toolbar-item > a:hover,
+div.code-toolbar > .toolbar > .toolbar-item > button:hover,
+div.code-toolbar > .toolbar > .toolbar-item > span:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+}
 
 hr {
   border: 0;

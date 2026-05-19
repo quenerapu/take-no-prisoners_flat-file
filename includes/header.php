@@ -14,9 +14,9 @@
   }
   ?>
 
-  <link rel="stylesheet" href="<?= $config['base_url'] ?>/assets/css/style.css?v=<?= time() ?><?= $config['app_version'] ?>">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism-okaidia.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/toolbar/prism-toolbar.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="<?= $config['base_url'] ?>/assets/css/style.css?v=<?= time() ?><?= $config['app_version'] ?>">
 
   <?php $iconPath = $config['base_url'] . '/assets/favicons'; ?>
   <link rel="icon" type="image/png" href="<?= $iconPath ?>/favicon-96x96.png" sizes="96x96">

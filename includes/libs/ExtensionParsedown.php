@@ -15,6 +15,24 @@ class ExtensionParsedown extends Parsedown {
      * @param string $currentLang Idioma activo de la petición actual
      * @param string $currentSlug Slug de la página actual (sin prefijo de idioma)
      */
+    protected function blockFencedCode($Line)
+    {
+        $Block = parent::blockFencedCode($Line);
+        if (!isset($Block)) return $Block;
+
+        $marker       = $Line['text'][0];
+        $openerLength = strspn($Line['text'], $marker);
+        $infostring   = trim(substr($Line['text'], $openerLength), "\t ");
+
+        // Si hay nombre de archivo después del idioma: ```php archivo.php
+        if ($infostring !== '' && preg_match('/^(\S+)\s+(\S+)/', $infostring, $m)) {
+            $Block['element']['element']['attributes']['class'] = 'language-' . $m[1];
+            $Block['element']['attributes']['data-filename']    = $m[2];
+        }
+
+        return $Block;
+    }
+
     public function setContentContext($contentDir, array $validLangs, $currentLang, $currentSlug = '')
     {
         $this->contentDir  = rtrim($contentDir, '/');
@@ -120,7 +138,18 @@ class ExtensionParsedown extends Parsedown {
         $this->DefinitionData = [];
         $text = str_replace(["\r\n", "\r"], "\n", $text);
         $text = $this->convertSeparatorlessTables($text);
-        return parent::text($text);
+        return $this->renderTaskLists(parent::text($text));
+    }
+
+    private function renderTaskLists($html)
+    {
+        // Listas tight: <li>[ ] y <li>[x]
+        $html = preg_replace('/<li>\[ \]/', '<li class="task-item"><input type="checkbox" disabled> ', $html);
+        $html = preg_replace('/<li>\[x\]/i', '<li class="task-item"><input type="checkbox" checked disabled> ', $html);
+        // Listas loose (con <p> interno): <li><p>[ ] y <li><p>[x]
+        $html = preg_replace('/<li><p>\[ \]/', '<li class="task-item"><p><input type="checkbox" disabled> ', $html);
+        $html = preg_replace('/<li><p>\[x\]/i', '<li class="task-item"><p><input type="checkbox" checked disabled> ', $html);
+        return $html;
     }
 
     /**

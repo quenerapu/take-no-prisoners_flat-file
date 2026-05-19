@@ -478,7 +478,13 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
             cm.replaceRange(table, cm.getCursor());
             cm.focus();
         };
-        editorConfig.toolbar = ["bold", "italic", "heading", "|", "quote", "unordered-list", "link", "image", "|", { name: "insert-table", action: insertTable, className: "fa-solid fa-table", title: "Insertar tabla" }, { name: "symbol-trigger", action: (editor) => toggleSymbolPicker(editor), className: "fa-symbol-trigger", title: "Insertar símbolos" }, "|", "side-by-side", "fullscreen"];
+        const insertTaskList = (editor) => {
+            const list = "\n- [ ] Tarea pendiente\n- [ ] Otra tarea\n- [x] Tarea completada\n";
+            const cm = editor.codemirror;
+            cm.replaceRange(list, cm.getCursor());
+            cm.focus();
+        };
+        editorConfig.toolbar = ["bold", "italic", "heading", "|", "quote", "unordered-list", "link", "image", "|", { name: "insert-table", action: insertTable, className: "fa-solid fa-table", title: "Insertar tabla" }, { name: "insert-tasklist", action: insertTaskList, className: "fa-solid fa-list-check", title: "Lista de tareas" }, { name: "symbol-trigger", action: (editor) => toggleSymbolPicker(editor), className: "fa-symbol-trigger", title: "Insertar símbolos" }, "|", "side-by-side", "fullscreen"];
     } else {
         editorConfig.toolbar = false;
         document.getElementById('editorWrapper').classList.add('mode-code');
