@@ -103,6 +103,18 @@ class Content
 
     private function processSnippets($text)
     {
+        // Proteger bloques de código cercados (``` y ~~~) antes de procesar snippets
+        $protected = [];
+        $text = preg_replace_callback(
+            '/^(`{3,}|~{3,})[^\n]*\n.*?\n\1[ \t]*$/ms',
+            function($m) use (&$protected) {
+                $token = "\x02" . count($protected) . "\x03";
+                $protected[$token] = $m[0];
+                return $token;
+            },
+            $text
+        );
+
         $depth = 0;
         $maxDepth = 5;
 
@@ -110,7 +122,7 @@ class Content
             $text = preg_replace_callback('/\{\{(.*?)\}\}/', function($matches) {
                 $name = trim($matches[1]);
                 $snippetsDir = __DIR__ . '/../snippets/';
-                
+
                 $candidates = [
                     $snippetsDir . $name,
                     $snippetsDir . $name . '.php',
@@ -121,13 +133,13 @@ class Content
                 foreach ($candidates as $path) {
                     if (file_exists($path) && !is_dir($path)) {
                         $ext = pathinfo($path, PATHINFO_EXTENSION);
-                        
+
                         if ($ext === 'php') {
                             ob_start();
                             include $path;
                             return ob_get_clean();
                         }
-                        
+
                         $content = file_get_contents($path);
                         if ($ext === 'md') {
                             $pd = new \ExtensionParsedown();
@@ -141,6 +153,8 @@ class Content
             }, $text);
             $depth++;
         }
-        return $text;
+
+        // Restaurar los bloques de código protegidos
+        return strtr($text, $protected);
     }
 }
