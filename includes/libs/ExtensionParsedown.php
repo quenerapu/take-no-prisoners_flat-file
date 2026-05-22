@@ -20,14 +20,38 @@ class ExtensionParsedown extends Parsedown {
         $Block = parent::blockFencedCode($Line);
         if (!isset($Block)) return $Block;
 
-        $marker       = $Line['text'][0];
-        $openerLength = strspn($Line['text'], $marker);
-        $infostring   = trim(substr($Line['text'], $openerLength), "\t ");
+        $marker     = $Line['text'][0];
+        $openerLen  = strspn($Line['text'], $marker);
+        $infostring = trim(substr($Line['text'], $openerLen), "\t ");
 
-        // Si hay nombre de archivo después del idioma: ```php archivo.php
-        if ($infostring !== '' && preg_match('/^(\S+)\s+(\S+)/', $infostring, $m)) {
-            $Block['element']['element']['attributes']['class'] = 'language-' . $m[1];
-            $Block['element']['attributes']['data-filename']    = $m[2];
+        if ($infostring === '') return $Block;
+
+        $tokens   = preg_split('/\s+/', $infostring);
+        $lang     = array_shift($tokens);
+        $filename = '';
+        $flags    = [];
+
+        foreach ($tokens as $token) {
+            if (strpos($token, '.') !== false) {
+                $filename = $token;       // tiene punto → nombre de archivo
+            } else {
+                $flags[] = $token;        // sin punto → flag (1, w…)
+            }
+        }
+
+        $Block['element']['element']['attributes']['class'] = 'language-' . $lang;
+
+        if ($filename !== '') {
+            $Block['element']['attributes']['data-filename'] = $filename;
+        }
+
+        $preClasses = [];
+        if (in_array('1', $flags)) $preClasses[] = 'line-numbers';
+        if (in_array('w', $flags)) $preClasses[] = 'code-wrap';
+
+        if (!empty($preClasses)) {
+            $existing = $Block['element']['attributes']['class'] ?? '';
+            $Block['element']['attributes']['class'] = trim($existing . ' ' . implode(' ', $preClasses));
         }
 
         return $Block;

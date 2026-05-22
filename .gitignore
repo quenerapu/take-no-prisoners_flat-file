@@ -3,7 +3,5 @@
 admin/
 certs/*.pem
 certs/*-key.pem
-docker-compose.yml
-Dockerfile
 #content/search_index.json
 .bkp

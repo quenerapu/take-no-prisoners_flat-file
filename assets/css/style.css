@@ -234,6 +234,7 @@ code {
 }
 
 pre code { background: transparent; color: inherit; font-size: .9rem !important; line-height: .5 !important; padding: 0; }
+pre.code-wrap code { white-space: pre-wrap; word-break: break-all; }
 
 /* --- PRISM TOOLBAR --- */
 div.code-toolbar > .toolbar {
