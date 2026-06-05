@@ -473,9 +473,44 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
 
     if (isMarkdown) {
         const insertTable = (editor) => {
-            const table = "\n| Col 1 | Col 2 | Col 3 |\n|-------|-------|-------|\n|       |       |       |\n";
             const cm = editor.codemirror;
-            cm.replaceRange(table, cm.getCursor());
+            const cursor = cm.getCursor();
+            const totalLines = cm.lineCount();
+            // Find the table block around the cursor
+            let start = cursor.line, end = cursor.line;
+            while (start > 0 && /^\s*\|/.test(cm.getLine(start - 1))) start--;
+            while (end < totalLines - 1 && /^\s*\|/.test(cm.getLine(end + 1))) end++;
+            const lines = [];
+            for (let i = start; i <= end; i++) lines.push(cm.getLine(i));
+            const isTable = lines.length >= 2 && lines.every(l => /^\s*\|/.test(l));
+            if (isTable) {
+                // Format existing table
+                const parseRow = (line) => line.replace(/^\s*\||\|\s*$/g, '').split('|').map(c => c.trim());
+                const rows = lines.map(parseRow);
+                const colCount = Math.max(...rows.map(r => r.length));
+                rows.forEach(r => { while (r.length < colCount) r.push(''); });
+                const isSep = (row) => row.every(c => /^:?-+:?$/.test(c));
+                const widths = Array.from({length: colCount}, (_, ci) =>
+                    Math.max(...rows.map(r => r[ci].length), 3)
+                );
+                const formatted = rows.map((row, ri) => {
+                    const cells = row.map((cell, ci) => {
+                        const w = widths[ci];
+                        if (isSep(rows[ri])) {
+                            if (cell.startsWith(':') && cell.endsWith(':')) return ':' + '-'.repeat(w - 2) + ':';
+                            if (cell.endsWith(':')) return '-'.repeat(w - 1) + ':';
+                            if (cell.startsWith(':')) return ':' + '-'.repeat(w - 1);
+                            return '-'.repeat(w);
+                        }
+                        return cell.padEnd(w);
+                    });
+                    return '| ' + cells.join(' | ') + ' |';
+                });
+                cm.replaceRange(formatted.join('\n'), {line: start, ch: 0}, {line: end, ch: cm.getLine(end).length});
+            } else {
+                // Insert demo table
+                cm.replaceRange("\n| Col 1 | Col 2 | Col 3 |\n|-------|-------|-------|\n|       |       |       |\n", cursor);
+            }
             cm.focus();
         };
         const insertTaskList = (editor) => {
@@ -484,7 +519,7 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
             cm.replaceRange(list, cm.getCursor());
             cm.focus();
         };
-        editorConfig.toolbar = ["bold", "italic", "heading", "|", "quote", "unordered-list", "link", "image", "|", { name: "insert-table", action: insertTable, className: "fa-solid fa-table", title: "Insertar tabla" }, { name: "insert-tasklist", action: insertTaskList, className: "fa-solid fa-list-check", title: "Lista de tareas" }, { name: "symbol-trigger", action: (editor) => toggleSymbolPicker(editor), className: "fa-symbol-trigger", title: "Insertar símbolos" }, "|", "side-by-side", "fullscreen"];
+        editorConfig.toolbar = ["bold", "italic", "heading", "|", "quote", "unordered-list", "link", "image", "|", { name: "insert-table", action: insertTable, className: "fa-solid fa-table", title: "Insertar tabla / Alinear tabla" }, { name: "insert-tasklist", action: insertTaskList, className: "fa-solid fa-list-check", title: "Lista de tareas" }, { name: "symbol-trigger", action: (editor) => toggleSymbolPicker(editor), className: "fa-symbol-trigger", title: "Insertar símbolos" }, "|", "side-by-side", "fullscreen"];
     } else {
         editorConfig.toolbar = false;
         document.getElementById('editorWrapper').classList.add('mode-code');
