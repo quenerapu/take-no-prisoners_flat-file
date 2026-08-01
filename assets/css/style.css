@@ -201,16 +201,49 @@ ul.search-results {
 
 /* --- BLOQUES --- */
 blockquote {
-  border-left: 4px solid var(--accent);
+  border-left: 4px solid var(--text-light);
   background: #f8fafc;
   margin: 2rem 0;
-  padding: 1.5rem 2rem;
+  padding: 0.75rem 2rem 0.75rem 0.75rem;
   font-style: italic;
   font-size: 1.1rem;
   color: #475569;
   border-radius: 0 var(--radius) var(--radius) 0;
-  
+
+  & p:first-child { margin-top: 0; }
   & p:last-child { margin-bottom: 0; }
+}
+
+/* Callouts: blockquotes con emoji inicial (> 💡 Texto) */
+blockquote.callout {
+  font-style: normal;
+  font-size: 1rem;
+
+  & .callout-icon { margin-right: 0.4em; }
+}
+
+blockquote.callout-tip {
+  border-left-color: var(--accent);
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+blockquote.callout-nota {
+  border-left-color: #3b82f6;
+  background: var(--info-bg);
+  color: var(--info-text);
+}
+
+blockquote.callout-aviso {
+  border-left-color: #f97316;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+blockquote.callout-importante {
+  border-left-color: #ef4444;
+  background: var(--error-bg);
+  color: var(--error-text);
 }
 
 pre {
@@ -225,12 +258,14 @@ pre {
 }
 
 code {
-  background-color: #f1f5f9;
-  color: #be185d; /* Un color rosado para destacar código inline */
+  background-color: #5371a3;
+  color: #e2e8f0;
   padding: 0.2em 0.4em;
   border-radius: 4px;
-  font-size: 1.1rem !important;
+  font-size: 1em;
   font-family: var(--font-mono);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 pre code { background: transparent; color: inherit; font-size: 1em; line-height: inherit; padding: 0; }

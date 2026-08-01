@@ -375,8 +375,12 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
         .CodeMirror-scroll { height: 100% !important; min-height: 100px !important; overflow-y: auto !important; overflow-x: hidden !important; padding: 10px; }
         .CodeMirror-line.cm-draft-highlight { color: #ef4444 !important; font-weight: 700 !important; }
         .editor-toolbar button.fa-symbol-trigger { font-family: system-ui, sans-serif !important; font-weight: 700; font-size: 1.1rem; line-height: 1; }
+        .editor-toolbar button.fa-callout-trigger { font-family: system-ui, sans-serif !important; font-weight: 700; font-size: 1.1rem; line-height: 1; }
         #symbol-picker { position: absolute; background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 8px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; z-index: 9999; display: none; }
         .symbol-item { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; font-size: 1.2rem; }
+        #callout-picker { position: absolute; background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 6px; min-width: 170px; z-index: 9999; display: none; }
+        .callout-picker-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.95rem; color: #334155; white-space: nowrap; }
+        .callout-picker-item:hover { background: #f1f5f9; color: #2563eb; }
         .symbol-item:hover { background: #f1f5f9; color: #2563eb; }
         .cm-header-1 { font-size: 1.4rem !important; color: #2563eb !important; }
         .cm-header-2 { font-size: 1.2rem !important; color: #2563eb !important; }
@@ -422,6 +426,7 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
                     <?php else: ?><div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#cbd5e1;"><i class="fa-solid fa-feather fa-4x"></i></div><?php endif; ?>
                 </div>
                 <div id="symbol-picker"></div>
+                <div id="callout-picker"></div>
             </form>
         <?php elseif($activeTab==='media'): ?>
             <div class="media-scroll-container">
@@ -457,6 +462,12 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
     const STORAGE_KEY = 'grijander_open_folders';
     const activeTab = "<?= $activeTab ?>";
     const SYMBOLS = ["§", "¶", "†", "‡", "•", "−", "—", "≈", "≠", "≤", "≥", "→", "←", "↑", "↓", "✓", "⚠", "💡", "📁", "🖼", "🔗", "✨", "⭐", "📝"];
+    const CALLOUTS = [
+        { emoji: "💡", label: "Tip/Idea" },
+        { emoji: "📝", label: "Nota" },
+        { emoji: "⚠️", label: "Aviso" },
+        { emoji: "🚨", label: "Importante" },
+    ];
 
     function navTo(tab) {
         if (tab === 'content') { const last = localStorage.getItem(FILE_KEY); window.location.href = last ? `?tab=content&file=${encodeURIComponent(last)}` : '?tab=content'; }
@@ -519,7 +530,7 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
             cm.replaceRange(list, cm.getCursor());
             cm.focus();
         };
-        editorConfig.toolbar = ["bold", "italic", "heading", "|", "quote", "unordered-list", "link", "image", "|", { name: "insert-table", action: insertTable, className: "fa-solid fa-table", title: "Insertar tabla / Alinear tabla" }, { name: "insert-tasklist", action: insertTaskList, className: "fa-solid fa-list-check", title: "Lista de tareas" }, { name: "symbol-trigger", action: (editor) => toggleSymbolPicker(editor), className: "fa-symbol-trigger", title: "Insertar símbolos" }, "|", "side-by-side", "fullscreen"];
+        editorConfig.toolbar = ["bold", "italic", "heading", "|", "quote", { name: "callout-trigger", action: (editor) => toggleCalloutPicker(editor), className: "fa-callout-trigger", title: "Insertar bloque con icono (tip, nota, aviso, importante)" }, "unordered-list", "link", "image", "|", { name: "insert-table", action: insertTable, className: "fa-solid fa-table", title: "Insertar tabla / Alinear tabla" }, { name: "insert-tasklist", action: insertTaskList, className: "fa-solid fa-list-check", title: "Lista de tareas" }, { name: "symbol-trigger", action: (editor) => toggleSymbolPicker(editor), className: "fa-symbol-trigger", title: "Insertar símbolos" }, "|", "side-by-side", "fullscreen"];
     } else {
         editorConfig.toolbar = false;
         document.getElementById('editorWrapper').classList.add('mode-code');
@@ -547,6 +558,17 @@ function renderTree($dir, $root, $currentSelection, $type = 'content') {
     document.addEventListener('mousedown', (e) => { const picker = document.getElementById('symbol-picker'); if (picker && !picker.contains(e.target) && !e.target.classList.contains('fa-symbol-trigger')) picker.style.display = 'none'; });
     const triggerBtn = document.querySelector('.fa-symbol-trigger');
     if (triggerBtn) triggerBtn.textContent = '§';
+
+    function toggleCalloutPicker(editor) {
+        const picker = document.getElementById('callout-picker'), trigger = document.querySelector('.fa-callout-trigger');
+        if (picker.style.display === 'block') { picker.style.display = 'none'; } else {
+            const rect = trigger.getBoundingClientRect(); picker.style.left = rect.left + 'px'; picker.style.top = rect.bottom + 'px'; picker.style.display = 'block';
+            picker.innerHTML = ''; CALLOUTS.forEach(c => { const item = document.createElement('div'); item.className = 'callout-picker-item'; item.innerHTML = `<span>${c.emoji}</span><span>${c.label}</span>`; item.onclick = () => { editor.codemirror.replaceRange(`\n> ${c.emoji} ${c.label}\n`, editor.codemirror.getCursor()); picker.style.display = 'none'; editor.codemirror.focus(); }; picker.appendChild(item); });
+        }
+    }
+    document.addEventListener('mousedown', (e) => { const picker = document.getElementById('callout-picker'); if (picker && !picker.contains(e.target) && !e.target.classList.contains('fa-callout-trigger')) picker.style.display = 'none'; });
+    const calloutTriggerBtn = document.querySelector('.fa-callout-trigger');
+    if (calloutTriggerBtn) calloutTriggerBtn.textContent = '💡';
     localStorage.setItem(activeTab === 'content' ? FILE_KEY : SNIPPET_KEY, fileName);
     const updatePlaceholder = () => { const wrapper = document.getElementById('editorWrapper'); if (easyMDE.value().trim() === '') wrapper.classList.add('is-editor-empty'); else wrapper.classList.remove('is-editor-empty'); };
     easyMDE.codemirror.on('change', updatePlaceholder); updatePlaceholder();

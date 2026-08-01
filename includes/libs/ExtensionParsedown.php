@@ -162,7 +162,63 @@ class ExtensionParsedown extends Parsedown {
         $this->DefinitionData = [];
         $text = str_replace(["\r\n", "\r"], "\n", $text);
         $text = $this->convertSeparatorlessTables($text);
-        return $this->renderTaskLists(parent::text($text));
+        $html = $this->renderTaskLists(parent::text($text));
+        return $this->convertArrows($this->renderCallouts($html));
+    }
+
+    /**
+     * Sustituye "->" por "→" en el HTML ya renderizado, protegiendo antes
+     * el contenido de <code> y <pre> (incluido <pre><code>...</code></pre>,
+     * gracias a la retrorreferencia \1) para no tocar bloques de código.
+     */
+    private function convertArrows($html)
+    {
+        $codeBlocks = [];
+        $protected = preg_replace_callback(
+            '/<(pre|code)\b[^>]*>.*?<\/\1>/is',
+            function ($match) use (&$codeBlocks) {
+                $placeholder = "\x00CB" . count($codeBlocks) . "\x00";
+                $codeBlocks[] = $match[0];
+                return $placeholder;
+            },
+            $html
+        );
+
+        // Parsedown ya ha escapado el texto, así que "->" llega aquí como "-&gt;".
+        $protected = str_replace('-&gt;', '→', $protected);
+
+        return preg_replace_callback(
+            '/\x00CB(\d+)\x00/',
+            function ($match) use ($codeBlocks) {
+                return $codeBlocks[(int) $match[1]];
+            },
+            $protected
+        );
+    }
+
+    /**
+     * Convierte blockquotes cuyo contenido empieza por un emoji reconocido
+     * (> 💡 Texto) en callouts con clase propia, reutilizando el <blockquote>
+     * normal de Parsedown. El orden de las claves importa: "⚠️" (con variante)
+     * debe comprobarse antes que "⚠" para no dejar el selector de variación suelto.
+     */
+    private function renderCallouts($html)
+    {
+        $callouts = [
+            '💡' => 'tip',
+            '📝' => 'nota',
+            '⚠️' => 'aviso',
+            '⚠'  => 'aviso',
+            '🚨' => 'importante',
+        ];
+
+        foreach ($callouts as $emoji => $type) {
+            $pattern = '/<blockquote>\s*<p>' . preg_quote($emoji, '/') . '\s*/u';
+            $replacement = '<blockquote class="callout callout-' . $type . '"><p><span class="callout-icon">' . $emoji . '</span> ';
+            $html = preg_replace($pattern, $replacement, $html);
+        }
+
+        return $html;
     }
 
     private function renderTaskLists($html)
