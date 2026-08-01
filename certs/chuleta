@@ -1,9 +1,15 @@
-mkcert -install
-mkdir -p certs
-cd certs
-mkcert localhost 127.0.0.1 ::1
+1. Instala mkcert si no lo tienes ya instalado:
+https://github.com/FiloSottile/mkcert?tab=readme-ov-file#installation
 
-localhost+2.pem (El certificado público)
-localhost+2-key.pem (La clave privada)
+2. Entra en el directorio certs: cd certs
+
+3. Crea los certificados: mkcert localhost 127.0.0.1 ::1
+
+4. Verás:
+
+   localhost+2.pem (El certificado público)
+   localhost+2-key.pem (La clave privada)
 
 (El +2 significa que cubre "localhost" más otras 2 direcciones extra).
+
+5. ¡Listo!
