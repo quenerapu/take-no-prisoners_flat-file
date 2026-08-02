@@ -155,6 +155,16 @@ class ExtensionParsedown extends Parsedown {
         return !file_exists($base . '.md') && !file_exists($base . '/home.md');
     }
 
+    /**
+     * Reglas de sustitución tipográfica aplicadas al HTML ya renderizado
+     * (siempre protegiendo <code>/<pre>, ver applyTypographicReplacements()).
+     * Añadir una conversión nueva es tan sencillo como añadir una entrada aquí.
+     */
+    private $typographicReplacements = [
+        '/-&gt;/'         => '→', // "->" (Parsedown ya lo ha escapado a "-&gt;")
+        '/(?<!-)--(?!-)/' => '—', // "--" suelto a guión largo; no toca "---"
+    ];
+
     function text($text)
     {
         // Inicializar DefinitionData para que lineElements() funcione
@@ -162,16 +172,47 @@ class ExtensionParsedown extends Parsedown {
         $this->DefinitionData = [];
         $text = str_replace(["\r\n", "\r"], "\n", $text);
         $text = $this->convertSeparatorlessTables($text);
+        $text = $this->convertQuoteAuthors($text);
         $html = $this->renderTaskLists(parent::text($text));
-        return $this->convertArrows($this->renderCallouts($html));
+        $html = $this->renderCallouts($html);
+        return $this->applyTypographicReplacements($html);
     }
 
     /**
-     * Sustituye "->" por "→" en el HTML ya renderizado, protegiendo antes
-     * el contenido de <code> y <pre> (incluido <pre><code>...</code></pre>,
-     * gracias a la retrorreferencia \1) para no tocar bloques de código.
+     * Convierte la última línea de una cita en su firma de autor:
+     *   > Texto de la cita
+     *   > --Autor de la cita
+     * en un <span> (que el CSS convierte en "— Autor..." en su propia línea).
+     * Fuerza una línea "de cita" en blanco antes si no la había, para que
+     * Parsedown separe la cita y la firma en párrafos distintos.
      */
-    private function convertArrows($html)
+    private function convertQuoteAuthors($text)
+    {
+        $lines  = explode("\n", $text);
+        $result = [];
+
+        foreach ($lines as $line) {
+            if (preg_match('/^>\s*--(?!-)\s*(.*)$/', $line, $m)) {
+                $author = trim($m[1]);
+                $prevIsQuoteWithContent = !empty($result) && preg_match('/^>\s*\S/', end($result));
+                if ($prevIsQuoteWithContent) {
+                    $result[] = '>';
+                }
+                $result[] = '> <span>' . $author . '</span>';
+                continue;
+            }
+            $result[] = $line;
+        }
+
+        return implode("\n", $result);
+    }
+
+    /**
+     * Sustituye, en el HTML ya renderizado, cada patrón de $typographicReplacements,
+     * protegiendo antes el contenido de <code> y <pre> (incluido <pre><code>...</code></pre>,
+     * gracias a la retrorreferencia \1) para no tocar nunca bloques de código.
+     */
+    private function applyTypographicReplacements($html)
     {
         $codeBlocks = [];
         $protected = preg_replace_callback(
@@ -184,8 +225,9 @@ class ExtensionParsedown extends Parsedown {
             $html
         );
 
-        // Parsedown ya ha escapado el texto, así que "->" llega aquí como "-&gt;".
-        $protected = str_replace('-&gt;', '→', $protected);
+        foreach ($this->typographicReplacements as $pattern => $replacement) {
+            $protected = preg_replace($pattern, $replacement, $protected);
+        }
 
         return preg_replace_callback(
             '/\x00CB(\d+)\x00/',

@@ -212,6 +212,17 @@ blockquote {
 
   & p:first-child { margin-top: 0; }
   & p:last-child { margin-bottom: 0; }
+
+  /* Firma de autor: > Cita seguida de un párrafo con <span>Autor</span> */
+  & p:has(> span:not(.callout-icon)) { margin-top: 0; }
+
+  & span:not(.callout-icon) {
+    display: block;
+    font-style: italic;
+    margin-top: -1rem;
+
+    &::before { content: "— "; }
+  }
 }
 
 /* Callouts: blockquotes con emoji inicial (> 💡 Texto) */
