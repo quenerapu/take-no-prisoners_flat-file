@@ -185,13 +185,20 @@ class ExtensionParsedown extends Parsedown {
      * en un <span> (que el CSS convierte en "— Autor..." en su propia línea).
      * Fuerza una línea "de cita" en blanco antes si no la había, para que
      * Parsedown separe la cita y la firma en párrafos distintos.
+     * Las líneas dentro de un bloque de código con vallas (``` o ~~~) se
+     * dejan intactas: su contenido es literal, no Markdown.
      */
     private function convertQuoteAuthors($text)
     {
         $lines  = explode("\n", $text);
+        $mask   = $this->computeFenceMask($lines);
         $result = [];
 
-        foreach ($lines as $line) {
+        foreach ($lines as $i => $line) {
+            if ($mask[$i]) {
+                $result[] = $line;
+                continue;
+            }
             if (preg_match('/^>\s*--(?!-)\s*(.*)$/', $line, $m)) {
                 $author = trim($m[1]);
                 $prevIsQuoteWithContent = !empty($result) && preg_match('/^>\s*\S/', end($result));
@@ -205,6 +212,45 @@ class ExtensionParsedown extends Parsedown {
         }
 
         return implode("\n", $result);
+    }
+
+    /**
+     * Calcula, para cada línea de $lines, si forma parte de (o es) un bloque
+     * de código delimitado por vallas (``` o ~~~ de 3+ caracteres). Se usa
+     * para que las transformaciones de texto crudo (convertQuoteAuthors,
+     * convertSeparatorlessTables) nunca reinterpreten contenido literal
+     * dentro de un bloque de código como si fuera Markdown real.
+     */
+    private function computeFenceMask(array $lines)
+    {
+        $mask      = [];
+        $inFence   = false;
+        $fenceChar = null;
+        $fenceLen  = 0;
+
+        foreach ($lines as $line) {
+            $trimmed = ltrim($line, " \t");
+
+            if (!$inFence) {
+                if (preg_match('/^(`{3,}|~{3,})/', $trimmed, $m)) {
+                    $inFence   = true;
+                    $fenceChar = $m[1][0];
+                    $fenceLen  = strlen($m[1]);
+                    $mask[]    = true;
+                    continue;
+                }
+                $mask[] = false;
+                continue;
+            }
+
+            $mask[] = true;
+            $closePattern = '/^' . preg_quote($fenceChar, '/') . '{' . $fenceLen . ',}\s*$/';
+            if (preg_match($closePattern, $trimmed)) {
+                $inFence = false;
+            }
+        }
+
+        return $mask;
     }
 
     /**
@@ -289,12 +335,19 @@ class ExtensionParsedown extends Parsedown {
     private function convertSeparatorlessTables($text)
     {
         $lines  = explode("\n", $text);
+        $mask   = $this->computeFenceMask($lines);
         $result = [];
         $i      = 0;
         $n      = count($lines);
 
         while ($i < $n) {
             $line = $lines[$i];
+
+            if ($mask[$i]) {
+                $result[] = $line;
+                $i++;
+                continue;
+            }
 
             if (isset($line[0]) && $line[0] === '|') {
                 // Recoger todas las líneas consecutivas con |
